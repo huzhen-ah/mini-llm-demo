@@ -11,6 +11,7 @@ __pycache__/
 # Local data and corpus files
 data/
 *.txt
+!requirements.txt
 
 # Generated tokenizer files
 config/*.json
