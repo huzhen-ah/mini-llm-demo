@@ -2,19 +2,64 @@
 
 这是一个基于 Keras / TensorFlow 实现的 mini LLM demo，覆盖从 tokenizer、decoder-only Transformer 预训练，到 prefill / decode KVCache 推理的完整主链路。
 
-项目目前包含：
+## 项目亮点
 
-- Byte-level BPE tokenizer 训练与编码解码
-- Transformer decoder-only 语言模型
-- RMSNorm、RoPE、SwiGLU、Causal Mask、Padding Mask
-- next token prediction 预训练
-- prefill / decode 分离的 KVCache 推理
-- Keras 权重路径映射，用于训练模型到推理模型的权重迁移
+- 从零实现 Byte-level BPE tokenizer 训练与编码解码。
+- 实现 decoder-only Transformer，包括 RMSNorm、RoPE、SwiGLU、causal mask 和 padding mask。
+- 支持 next-token prediction 预训练流程。
+- 拆分 prefill / decode 推理模型，并实现固定长度 KVCache 更新。
+- 使用 Keras 权重路径映射，在 pretrain / prefill / decode 模型之间迁移参数。
+- BBPE trainer 使用双向链表、pair 位置索引和 lazy heap，避免每轮全量扫描语料。
+
+## 整体链路
+
+```mermaid
+flowchart LR
+    A["Plain text"] --> B["BBPETrainer"]
+    B --> C["vocab.json / merge_rules.json"]
+    C --> D["Tokenizer"]
+    D --> E["Token ids"]
+    E --> F["Decoder-only Transformer pretraining"]
+    F --> G["Weight path mapping"]
+    G --> H["Prefill model"]
+    H --> I["Initial KVCache"]
+    I --> J["Decode model"]
+    J --> K["Next-token generation"]
+    J --> I
+```
+
+## 快速开始
+
+安装依赖：
+
+```bash
+pip install -r requirements.txt
+```
+
+准备纯文本数据到 `data/` 后，先训练 tokenizer：
+
+```bash
+python bbpe_trainer.py
+```
+
+然后进行 next-token prediction 预训练：
+
+```bash
+python pretrain.py
+```
+
+最后运行推理入口：
+
+```bash
+python interface.py
+```
 
 ## 项目结构
 
 ```text
 .
+├── README.md
+├── requirements.txt
 ├── pretrain.py                 # 预训练入口
 ├── interface.py                # 推理入口
 ├── tokenizer.py                # BBPE tokenizer 编码/解码
@@ -31,6 +76,8 @@
 ├── metrics.py                  # padding-aware accuracy
 ├── sample_utils.py             # top-k sampling
 ├── weight_utils.py             # 权重映射保存/加载
+├── docs/
+│   └── bbpe.md                 # BBPE 原理与实现
 └── experiments/                # 实验脚本与调试脚本
 ```
 
