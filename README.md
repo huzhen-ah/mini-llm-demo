@@ -199,16 +199,16 @@ decode attention 内部会转成：
 
 decode 阶段不再需要 causal mask，因为每次只输入当前 token；只需要根据 `cur_valid_len` 构造 valid key mask，屏蔽 cache 中尚未写入的位置。
 
-## 数据与产物
+## 数据、配置与模型文件
 
-仓库默认不包含以下本地产物：
+仓库只保留源码和说明文档，不包含本地训练文件：
 
 - 训练语料
 - 模型权重
-- tokenizer 训练产物
+- tokenizer 生成的 vocab / merge rules
 - 本地缓存文件
 
-相关文件已通过 `.gitignore` 忽略：
+这些文件默认由 `.gitignore` 排除：
 
 ```text
 data/
@@ -219,7 +219,7 @@ __pycache__/
 *.txt
 ```
 
-使用时可以自行准备纯文本数据，然后运行 tokenizer 训练与模型预训练流程。
+使用时准备纯文本数据，先运行 `bbpe_trainer.py` 生成 tokenizer 配置，再运行 `pretrain.py` 训练模型。
 
 ## Roadmap
 
