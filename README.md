@@ -4,12 +4,11 @@
 
 ## 项目亮点
 
-- 从零实现 Byte-level BPE tokenizer 训练与编码解码。
+- 从零实现 Byte-level BPE tokenizer：包含 vocab / merge rules 训练、编码解码，并在 trainer 中使用双向链表、pair 位置索引和 lazy heap，避免每轮全量扫描语料。
 - 实现 decoder-only Transformer，包括 RMSNorm、RoPE、SwiGLU、causal mask 和 padding mask。
 - 支持 next-token prediction 预训练流程。
 - 拆分 prefill / decode 推理模型，并实现固定长度 KVCache 更新。
 - 使用 Keras 权重路径映射，在 pretrain / prefill / decode 模型之间迁移参数。
-- BBPE trainer 使用双向链表、pair 位置索引和 lazy heap，避免每轮全量扫描语料。
 
 ## 整体链路
 
