@@ -26,7 +26,7 @@ class Evaluate(Callback):
             
     def on_epoch_end(self, epoch,logs=None):
         
-        text = "王语嫣微笑道：“名字总是取得好听些的。史上那些大奸大恶之辈"
+        text = "清晨的城市刚刚醒来，街边的灯光还没有完全熄灭"
         num = 0
         while True:
             num += 1

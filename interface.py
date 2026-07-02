@@ -150,9 +150,9 @@ if __name__ == "__main__":
     
     interface.init_decode_model(prefill_model_configs)
     
-    text_1 = "王语嫣微笑道：“名字总是取得好听些的。史上那些大奸大恶之辈"
-    text_2 = "王语嫣微笑道：“名字总是取得好听些的。史上那些"
-    text_3 = "王语嫣微笑道：“名字总是取得好听些的。史上那些大奸"
+    text_1 = "清晨的城市刚刚醒来，街边的灯光还没有完全熄灭"
+    text_2 = "清晨的城市刚刚醒来，街边的灯光"
+    text_3 = "清晨的城市刚刚醒来"
     
     prompts = ["      ",text_1,text_2,text_3]
     ret = interface.predict(prompts)
