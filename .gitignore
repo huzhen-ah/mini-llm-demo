@@ -1,0 +1,39 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*_副本.py
+*_copy.py
+*.bak
+
+# macOS
+.DS_Store
+
+# Local data and corpus files
+data/
+*.txt
+
+# Generated tokenizer files
+config/*.json
+
+# Model checkpoints and exported weights
+models/
+*.weights.h5
+*.h5
+*.keras
+*_k2v.pkl
+*.pkl
+
+# Logs and temporary outputs
+logs/
+runs/
+tmp/
+temp/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
