@@ -7,7 +7,7 @@
 - `transformblock.py`
 - `interface.py`
 
-本文只讨论本项目里的基础 KVCache：prefill 一次性写入 prompt 的 k/v，decode 阶段每次更新一个新 token 的 k/v。
+本文只讨论本项目里的基础 KVCache：prefill 一次性生成 prompt 的初始 k/v cache，decode 阶段每次更新一个新 token 的 k/v。
 
 ## 1. 为什么需要 KVCache
 
@@ -35,7 +35,7 @@ KVCache 的核心想法是：
 后续 decode 只计算当前新 token 的 k/v，然后追加到 cache 中。
 ```
 
-这样每一步只需要计算当前 token 的 q/k/v，其中 q 只和当前 token 做 attention，k/v 则来自：
+这样每一步只需要计算当前 token 的 q/k/v。其中只有当前 token 产生 query，这个 query 会和 cache 中所有有效 key/value 做 attention。k/v 则来自：
 
 ```text
 历史 cache + 当前 token 的 k/v
@@ -70,7 +70,7 @@ Decode_Model
 
 ### 3.1 对外形状
 
-在 `interface.py` 和 `Decode_Model` 的输入输出侧，cache 使用 batch-first 形状：
+在 decode 输入输出侧，固定长度 cache 使用 batch-first 形状：
 
 ```text
 (batch, layer, max_time, head, head_dim)
@@ -261,7 +261,7 @@ padding mask : 防止真实 token 看见 pad token
 
 ### 5.3 prefill 输出 cache
 
-prefill 阶段计算完整 prompt 的 k/v。当前层返回：
+prefill 阶段计算 padding 后 prompt 的 k/v。当前层返回：
 
 ```python
 return out, K.transpose(k, axes=[2,0,1,3]), K.transpose(v, axes=[2,0,1,3])
@@ -594,13 +594,13 @@ cur_valid_len - 1
 
 本项目当前 KVCache 实现有几个重要约定：
 
-- 对外 cache 使用 `(batch, layer, max_time, head, head_dim)`。
+- decode 对外 cache 使用 `(batch, layer, max_time, head, head_dim)`。
 - Decode 模型内部 cache 使用 `(layer, max_time, batch, head, head_dim)`。
 - scatter update 临时使用 `(layer, batch, max_time, head, head_dim)`。
 - `cur_valid_len` 在 decode 阶段表示当前 token 写入后的有效长度。
 - 当前 token 写入位置是 `cur_valid_len - 1`。
-- q/k 在写入或参与 attention 前已经应用 RoPE。
-- v 不应用 RoPE。
+- k 写入 cache 前已经应用 RoPE，q 参与 attention 前已经应用 RoPE。
+- v 写入 cache 前不应用 RoPE。
 - decode 阶段只输入一个 token，因此不需要 causal mask。
 - decode 阶段通过 `cur_valid_len` 构造 key mask，屏蔽所有无效 cache 位置。
 
@@ -627,7 +627,7 @@ Decode:
 核心设计是：
 
 ```text
-固定形状 cache + cur_valid_len 控制有效范围 + tensor_scatter_nd_update 单点更新。
+固定形状 cache + cur_valid_len 控制有效范围 + tensor_scatter_nd_update 按 batch 更新单 token 位置。
 ```
 
 这样可以在保持矩阵计算形式的同时，避免每一步重复计算历史 token 的 k/v。
