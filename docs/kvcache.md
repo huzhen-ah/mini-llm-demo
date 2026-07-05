@@ -7,7 +7,7 @@
 - `transformblock.py`
 - `interface.py`
 
-本文只讨论本项目里的基础单 token decode 场景，不展开分页 cache、量化 cache、speculative decoding 等推理优化。
+本文只讨论本项目里的基础 KVCache：prefill 一次性写入 prompt 的 k/v，decode 阶段每次更新一个新 token 的 k/v。
 
 ## 1. 为什么需要 KVCache
 
