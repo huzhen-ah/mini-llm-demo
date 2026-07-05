@@ -86,9 +86,19 @@ python interface.py
 ├── sample_utils.py             # top-k sampling
 ├── weight_utils.py             # 权重映射保存/加载
 ├── docs/
-│   └── bbpe.md                 # BBPE 原理与实现
+│   ├── bbpe.md                 # BBPE 原理与实现
+│   ├── rope.md                 # 绝对位置编码与 RoPE
+│   ├── kvcache.md              # KVCache 推理机制
+│   └── inference.md            # 推理主流程
 └── experiments/                # 实验脚本与调试脚本
 ```
+
+## 文档
+
+- [BBPE 原理与实现](docs/bbpe.md)
+- [绝对位置编码与 RoPE](docs/rope.md)
+- [KVCache 推理机制](docs/kvcache.md)
+- [推理主流程](docs/inference.md)
 
 ## 核心流程
 
@@ -257,6 +267,8 @@ decode attention 内部会转成：
 
 decode 阶段不再需要 causal mask，因为每次只输入当前 token；只需要根据 `cur_valid_len` 构造 valid key mask，屏蔽 cache 中尚未写入的位置。
 
+详细说明见：[KVCache 推理机制](docs/kvcache.md) 和 [推理主流程](docs/inference.md)。
+
 ## 数据、配置与模型文件
 
 仓库只保留源码和说明文档，不包含本地训练文件：
@@ -281,13 +293,13 @@ __pycache__/
 
 ## Roadmap
 
-- 补充 RoPE 原理与实现文档
-- 补充 KVCache 推理文档
+- LoRA-SFT：instruction 数据构造、answer-only loss mask、LoRA 权重保存/加载
+- DPO：chosen / rejected 偏好数据训练
+- RAG：文档切分、检索、拼接 prompt、生成对比
 - 增加最小运行示例
 - 增加 tokenizer 单元测试
 - 增加 prefill/decode cache shape 检查
 - 完善特殊 token 与 BBPE merge 的处理
-- 尝试 instruction tuning / RAG 扩展
 
 ## 说明
 
