@@ -51,15 +51,15 @@ class SwiGLU(Layer):
         self.lora_out_B = Dense(self.output_channel,use_bias=False,kernel_initializer="zeros",name="lora_out_B")
         self.base_layers = [self.v_dense,self.w_dense,self.out_dense]
         self.lora_layers = [self.lora_gate_v_A,self.lora_gate_v_B,self.lora_gate_w_A,self.lora_gate_w_B,self.lora_out_A,self.lora_out_B]
-        self.configure_lora_training()
+        # self.configure_lora_training()
     
         
-    def configure_lora_training(self):
+    # def configure_lora_training(self):
         
-        for layer in self.base_layers:
-            layer.trainable = not self.use_lora
-        for layer in self.lora_layers:
-            layer.trainable = self.use_lora
+    #     for layer in self.base_layers:
+    #         layer.trainable = not self.use_lora
+    #     for layer in self.lora_layers:
+    #         layer.trainable = self.use_lora
             
             
     def call(self,x):

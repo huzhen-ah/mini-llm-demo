@@ -31,3 +31,26 @@ class MaskedAccuracy(Metric):
     def reset_state(self):
         self.correct_count.assign(0)
         self.total_valid_tokens.assign(0)
+        
+
+class SFTAccuracy(Metric):
+    def __init__(self,name="sft_accuracy",**kwargs):
+        super().__init__(name=name,**kwargs)
+        self.correct_count = self.add_weight(name="correct_count",initializer="zeros")
+        self.total_valid_tokens = self.add_weight(name="total_valid_tokens",initializer="zeros")
+        
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        y_true,mask = y_true[...,0],y_true[...,1]
+        pred_labels = K.argmax(y_pred,axis=-1)
+        y_true = K.cast(y_true,dtype=pred_labels.dtype)
+        mask = mask > 0
+        correct_predictions = tf.equal(pred_labels, y_true) & mask
+        self.correct_count.assign_add(tf.reduce_sum(K.cast(correct_predictions,tf.float32)))
+        self.total_valid_tokens.assign_add(tf.reduce_sum(tf.cast(mask,tf.float32)))
+        
+    def result(self):
+        return self.correct_count / tf.maximum(self.total_valid_tokens, 1e-7)
+    
+    def reset_state(self):
+        self.correct_count.assign(0)
+        self.total_valid_tokens.assign(0)

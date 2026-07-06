@@ -10,6 +10,7 @@ __pycache__/
 
 # Local data and corpus files
 data/
+SFT_data/
 *.txt
 !requirements.txt
 
@@ -18,6 +19,7 @@ config/*.json
 
 # Model checkpoints and exported weights
 models/
+lora_weights/
 *.weights.h5
 *.h5
 *.keras

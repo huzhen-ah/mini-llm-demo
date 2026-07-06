@@ -25,8 +25,9 @@ class Interface:
         embedding_size = configs["embedding_size"]
         use_lora = configs["use_lora"]
         weight_map_path = configs["weight_map_path"]
+        lora_weights_path = configs.get("lora_weights_path","")
         special_ids = self.tokenizer.special_ids
-        self.prefill_model = Prefill_Model(num_block,num_head,embedding_size,self.vocab_size,special_ids,weight_map_path,use_lora=use_lora)
+        self.prefill_model = Prefill_Model(num_block,num_head,embedding_size,self.vocab_size,special_ids,weight_map_path,lora_weights_path,use_lora=use_lora)
     
     def init_decode_model(self,configs):
         num_block = configs["num_block"]
@@ -34,8 +35,9 @@ class Interface:
         embedding_size = configs["embedding_size"]
         use_lora = configs["use_lora"]
         weight_map_path = configs["weight_map_path"]
+        lora_weights_path = configs.get("lora_weights_path","")
         special_ids = self.tokenizer.special_ids
-        self.decode_model = Decode_Model(num_block, num_head, embedding_size, self.vocab_size,special_ids, self.max_len, weight_map_path,use_lora=use_lora)
+        self.decode_model = Decode_Model(num_block, num_head, embedding_size, self.vocab_size,special_ids, self.max_len, weight_map_path,lora_weights_path,use_lora=use_lora)
         
     def padding(self,X):
         max_len = max(len(x) for x in X)
@@ -139,22 +141,24 @@ if __name__ == "__main__":
     interface = Interface(Tokenizer())
     
     prefill_model_configs = {
-                                "num_block":4,
-                                "num_head":2,
-                                "embedding_size":64,
-                                "use_lora":False,
-                                "weight_map_path":r"models/4_k2v.pkl"
+                                "num_block":8,
+                                "num_head":4,
+                                "embedding_size":128,
+                                "use_lora":True,
+                                "weight_map_path":r"models/9_k2v.pkl",
+                                "lora_weights_path":r"lora_weights/9_lora_weights.pkl"
         
                             }
     interface.init_prefill_model(prefill_model_configs)
     
     interface.init_decode_model(prefill_model_configs)
     
-    text_1 = "清晨的城市刚刚醒来，街边的灯光还没有完全熄灭"
+    text_1 = "如何理解乔峰与段誉之间的对照？"
     text_2 = "清晨的城市刚刚醒来，街边的灯光"
     text_3 = "清晨的城市刚刚醒来"
+    text_4 = "郭靖对黄蓉说成吉思汗铁木真已经把华筝许配给他了，他现在是金刀驸马。"
     
-    prompts = ["      ",text_1,text_2,text_3]
+    prompts = ["      ",text_1,text_2,text_3,text_4]
     ret = interface.predict(prompts)
     for i in range(len(ret)):
         text = interface.tokenizer.decode(ret[i]["prompt"]+ret[i]["generated"])

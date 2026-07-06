@@ -13,11 +13,12 @@ import tensorflow as tf
 from keras import ops as K
 import numpy as np
 from weight_utils import apply_train_weights
-
+from lora_utils import apply_lora_weights
+import os
 
 
 class Prefill_Model:
-    def __init__(self,num_block,num_head,embedding_size,vocab_size,special_ids,weight_map_path,use_lora=False):
+    def __init__(self,num_block,num_head,embedding_size,vocab_size,special_ids,weight_map_path,lora_weights_path,use_lora=False):
         self.num_block = num_block
         self.num_head = num_head
         self.embedding_size = embedding_size
@@ -25,6 +26,7 @@ class Prefill_Model:
         self.vocab_size = vocab_size
         self.special_ids = special_ids
         self.weight_map_path = weight_map_path
+        self.lora_weights_path = lora_weights_path
         self.use_lora=use_lora
         self.create_model()
         
@@ -55,7 +57,8 @@ class Prefill_Model:
         self.model.summary()
         
         apply_train_weights(self.model,self.weight_map_path)
-        
+        if self.use_lora and os.path.isfile(self.lora_weights_path):
+            apply_lora_weights(self.model, self.lora_weights_path)
     
             
         
@@ -77,7 +80,7 @@ class Prefill_Model:
     
     
 class Decode_Model:
-    def __init__(self,num_block,num_head,embedding_size,vocab_size,special_ids,max_len,weight_map_path,use_lora=False):
+    def __init__(self,num_block,num_head,embedding_size,vocab_size,special_ids,max_len,weight_map_path,lora_weights_path,use_lora=False):
         self.num_block = num_block
         self.num_head = num_head
         self.embedding_size = embedding_size
@@ -86,6 +89,7 @@ class Decode_Model:
         self.special_ids = special_ids
         self.max_len = max_len
         self.weight_map_path = weight_map_path
+        self.lora_weights_path = lora_weights_path
         self.use_lora=use_lora
         self.create_model()
     
@@ -110,6 +114,8 @@ class Decode_Model:
         out_vcache = Lambda(lambda x : K.transpose(x,axes=[2,0,1,3,4]))(transformblock[3])
         self.model = Model([inputs,cur_valid_len,kcache_input,vcache_input],[out,out_kcache,out_vcache])
         apply_train_weights(self.model,self.weight_map_path)
+        if self.use_lora and os.path.isfile(self.lora_weights_path):
+            apply_lora_weights(self.model, self.lora_weights_path)
         print("decode_model参数加载完成")
         
     

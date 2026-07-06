@@ -10,6 +10,7 @@ from tqdm import tqdm
 from glob import glob
 import numpy as np
 import charset_normalizer
+import json
 
 def load_pretrain_data(tokenizer_tool,data_pattern,context_size,test_ratio=0.01):
     X_train,X_test = [],[]
@@ -58,3 +59,73 @@ def data_generator(X_train,batch_size,eos_id):
                 # print(".............Y.shape: ",X[:,1:].shape)
                 yield X[:,:-1],X[:,1:]
                 X = []
+                
+def load_sft_data(path,tokenizer_tool,context_size,test_ratio=0.01):
+    """
+    {"messages": [{"role": "user", "content": "九阴真经让人物选择难在哪里？"}, {"role": "assistant", "content": "它引发的冲突说明武学本身不决定正邪，使用者的心性更关键。"}]}
+
+    """
+    X_train,X_test = [],[]
+    with open(path,"r",encoding="utf8") as f:
+        for line in f:
+            data = json.loads(line)
+            sub = {"instruction":None,"input":"","output":None}
+            messages = data["messages"]
+            
+            for message in messages:
+                content = message["content"].strip()
+                if content == "":
+                    break
+                content_ids = tokenizer_tool.encode_text(content)
+                if len(content_ids) == 0:
+                    break
+                if message["role"] == "user":
+                    sub["instruction"] = content_ids
+                elif message["role"] == "assistant":
+                    sub["output"] = content_ids
+                else:
+                    break
+            if sub["instruction"] is None or sub["output"] is None:
+                continue
+            if len(sub["instruction"]) + len(sub["output"]) > context_size:
+                continue
+            if np.random.random() > test_ratio:
+                X_train.append(sub)
+            else:
+                X_test.append(sub)
+            
+    return X_train,X_test
+
+
+def padding_sft(X,Mask,pad_id):
+    ml = max(len(x) for x in X)
+    X = [x+[pad_id]*(ml-len(x)) for x in X]
+    Mask = [mask + [0]*(ml-len(mask)) for mask in Mask]
+    X = np.array(X,dtype="int32")
+    Mask = np.array(Mask,dtype="int32")
+    Y = X[:,1:]
+    Y = Y[...,None]
+    Mask = Mask[:,1:]
+    Mask = Mask[...,None]
+    Y = np.concatenate([Y,Mask],axis=-1)
+    X = X[:,:-1]
+    return X,Y
+
+def data_generator_sft(X_train,batch_size,eos_id,pad_id):
+    X,Mask = [],[]
+    while True:
+        indexes = np.random.permutation(len(X_train))
+        for index in indexes:
+            _ = X_train[index]
+            instruction = _["instruction"]
+            output = _["output"]
+            mask = [0] * len(instruction) + [1] * len(output) + [1]
+            x = instruction + output + [eos_id]
+            X.append(x)
+            Mask.append(mask)
+            if len(X) == batch_size or index == indexes[-1]:
+                X,Y = padding_sft(X, Mask, pad_id)
+                yield X,Y
+                X,Mask = [],[]
+                
+         
