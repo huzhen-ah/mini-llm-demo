@@ -17,11 +17,11 @@ if __name__ == "__main__":
     eos_id = tokenizer_tool.special_ids["<eos>"]   
     pad_id = tokenizer_tool.special_ids["<pad>"]
     
-    num_block = 8
-    num_head = 4
-    embedding_size = 128
+    num_block = 4
+    num_head = 2
+    embedding_size = 64
     vocab_size = len(tokenizer_tool.vocab)
-    use_lora = False
+    
     
     context_size = 200
     batch_size = 64
@@ -30,7 +30,6 @@ if __name__ == "__main__":
                 "num_head" : num_head,
                 "embedding_size" : embedding_size,
                 "hidden_channels" : embedding_size * 2,
-                "use_lora" : use_lora,
                 "vocab_size" : vocab_size,
                 "pad_id" : pad_id
               }
@@ -66,10 +65,9 @@ if __name__ == "__main__":
             
             
     model.fit(data_generator(X_train,batch_size,eos_id),
-              epochs=10,
+              epochs=20,
               steps_per_epoch=len(X_train)//(batch_size*1)+1,
               callbacks=[Evaluate(tokenizer_tool)])       
         
     
     
-        

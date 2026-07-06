@@ -7,7 +7,7 @@
 - 从零实现 Byte-level BPE tokenizer：包含 vocab / merge rules 训练、编码解码，并在 trainer 中使用双向链表、pair 位置索引和 lazy heap，避免每轮全量扫描语料。
 - 实现 decoder-only Transformer，包括 RMSNorm、RoPE、SwiGLU、causal mask 和 padding mask。
 - 支持 next-token prediction 预训练流程。
-- 支持 LoRA-SFT：构造 instruction 数据，使用 answer-only loss mask，只训练 LoRA 参数，并单独保存 / 加载 LoRA 权重。
+- 支持 LoRA-SFT：构造 instruction 数据，使用 answer-only loss mask，在 Attention 和 SwiGLU 中接入 LoRA，只训练 LoRA 参数，并单独保存 / 加载 LoRA 权重。
 - 拆分 prefill / decode 推理模型，并实现固定长度 KVCache 更新。
 - 使用 Keras 权重路径映射，在 pretrain / LoRA-SFT / prefill / decode 模型之间迁移参数。
 
@@ -39,6 +39,7 @@ flowchart TB
         Q --> J
         J --> K["Initial KVCache"]
         K --> L["Decode model"]
+        Q --> L
         L --> M["Next token"]
         M --> L
         L --> K
@@ -170,6 +171,8 @@ models/{epoch}_k2v.pkl
 - messages 格式数据
 - prompt + answer + eos 拼接
 - answer-only loss mask
+- Attention q/k/v/out LoRA
+- SwiGLU gate/out LoRA
 - base 权重冻结
 - 只训练路径中包含 `lora_` 的参数
 - LoRA 权重单独保存到 `lora_weights/`
@@ -215,10 +218,10 @@ token ids
   -> Embedding
   -> TransformerBlock x N
       -> RMSNorm
-      -> RoPE Self-Attention
+      -> RoPE Self-Attention (+ optional LoRA)
       -> Residual
       -> RMSNorm
-      -> SwiGLU FFN
+      -> SwiGLU FFN (+ optional LoRA)
       -> Residual
   -> tied lm head
   -> logits
@@ -230,11 +233,22 @@ token ids
 num_block = 4
 num_head = 2
 embedding_size = 64
-context_size = 100
+context_size = 200
 batch_size = 64
 ```
 
 这是用于本地快速验证的默认小配置，可以按机器资源调整模型规模与训练数据。
+
+## LoRA-SFT 实现特点
+
+LoRA 只在 `use_lora=True` 时参与前向计算。预训练阶段默认不启用 LoRA，因此 base 权重文件只保存原始模型参数；SFT 阶段先加载 base 权重，再冻结非 LoRA 参数，只训练路径中包含 `lora_` 的权重。
+
+当前 LoRA 接入位置包括：
+
+- Attention: `q / k / v / out`
+- SwiGLU: `gate_v / gate_w / out`
+
+LoRA 的 B 矩阵使用 zero initialization，因此刚启用 LoRA 且尚未训练时，模型输出仍等价于 base model。LoRA 权重会单独保存为 `{weight.path: ndarray}` 形式，推理时可以在加载 base 权重之后再叠加 LoRA 权重。
 
 ## BBPE 实现特点
 
@@ -353,9 +367,10 @@ __pycache__/
 ```text
 BBPE tokenizer
   -> decoder-only Transformer pretraining
+  -> LoRA-SFT
   -> weight mapping
   -> prefill / decode model
   -> KVCache inference
 ```
 
-项目代码尽量保持直接、可读，适合作为理解 tokenizer、Transformer 训练和 KVCache 推理流程的小型参考。
+项目代码尽量保持直接、可读，适合作为理解 tokenizer、Transformer 训练、LoRA-SFT 和 KVCache 推理流程的小型参考。

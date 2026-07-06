@@ -8,15 +8,16 @@ Created on Mon Jul  6 15:16:30 2026
 import pickle
 
 def mark_only_lora_as_trainable(model):
-    
+
     for w in model.weights:
         path = w.path
         if "lora_" not in path:
             w.trainable = False
         else:
+
             w.trainable = True
-            
-    
+
+
 def save_lora_weights(model,weight_map_path):
     ws = {}
     for w in model.weights:
@@ -24,11 +25,11 @@ def save_lora_weights(model,weight_map_path):
         if "lora_" not in path:
             continue
         value = w.numpy()
-        
+
         ws[path] = value
     with open(weight_map_path,"wb") as f:
         pickle.dump(ws,f)
-        
+
 
 def apply_lora_weights(model,weight_map_path):
     missing_ws = []
@@ -63,4 +64,3 @@ def apply_lora_weights(model,weight_map_path):
 
 
 
-    

@@ -16,8 +16,8 @@ class Interface:
         self.tokenizer = tokenizer
         self.vocab_size = len(self.tokenizer.vocab)
         self.max_len = 1000
-        
-    
+
+
 
     def init_prefill_model(self,configs):
         num_block = configs["num_block"]
@@ -28,7 +28,7 @@ class Interface:
         lora_weights_path = configs.get("lora_weights_path","")
         special_ids = self.tokenizer.special_ids
         self.prefill_model = Prefill_Model(num_block,num_head,embedding_size,self.vocab_size,special_ids,weight_map_path,lora_weights_path,use_lora=use_lora)
-    
+
     def init_decode_model(self,configs):
         num_block = configs["num_block"]
         num_head = configs["num_head"]
@@ -38,32 +38,32 @@ class Interface:
         lora_weights_path = configs.get("lora_weights_path","")
         special_ids = self.tokenizer.special_ids
         self.decode_model = Decode_Model(num_block, num_head, embedding_size, self.vocab_size,special_ids, self.max_len, weight_map_path,lora_weights_path,use_lora=use_lora)
-        
+
     def padding(self,X):
         max_len = max(len(x) for x in X)
         X = [x + [self.tokenizer.special_ids["<pad>"]]*(max_len - len(x)) for x in X]
         return np.array(X,dtype="int32")
-    
+
     def predict(self,prompts):
         ret = {}
         batch_text_ids = []
         valid_prompt_ids = []
         cur_valid_len = []
         for i,prompt in enumerate(prompts):
-            
-                
+
+
             text_ids = self.tokenizer.encode_text(prompt)
             text_ids = text_ids[:self.max_len]
             ret[i] = {"prompt":text_ids,"generated":[],"count":len(text_ids),"isover":False}
-            
+
             if len(text_ids) == self.max_len or len(text_ids) == 0:
                 ret[i]["isover"] = True
                 continue
             valid_prompt_ids.append(i)
             cur_valid_len.append(len(text_ids))
             batch_text_ids.append(text_ids)
-        
-        
+
+
         if len(batch_text_ids) == 0:
             return ret
         batch_text_ids = self.padding(batch_text_ids)
@@ -81,10 +81,10 @@ class Interface:
                             mode="constant",
                             constant_values=0
                         )
-        
+
         pred_ids = top_k_sampling(preds)
         new_valid_prompt_ids = []
-        
+
         for prompt_id,pred_id in zip(valid_prompt_ids,pred_ids):
             ret[prompt_id]["generated"].append(pred_id)
             ret[prompt_id]["count"] += 1
@@ -92,8 +92,8 @@ class Interface:
                 ret[prompt_id]["isover"] = True
                 continue
             new_valid_prompt_ids.append(prompt_id)
-            
-        
+
+
         valid_prompt_ids_indices = [valid_prompt_ids.index(_) for _ in new_valid_prompt_ids]
         keep_indices = np.array(valid_prompt_ids_indices,dtype="int32")
         valid_prompt_ids = new_valid_prompt_ids
@@ -103,8 +103,8 @@ class Interface:
                 vcache = vcache[np.array(keep_indices)]
             else:
                 return ret
-        
-        
+
+
         while True:
             batch_text_ids = []
             cur_valid_len = []
@@ -125,8 +125,8 @@ class Interface:
                     ret[prompt_id]["isover"] = True
                     continue
                 new_valid_prompt_ids.append(prompt_id)
-                
-            
+
+
             valid_prompt_ids_indices = [valid_prompt_ids.index(_) for _ in new_valid_prompt_ids]
             valid_prompt_ids = new_valid_prompt_ids
             if len(valid_prompt_ids) < kcache.shape[0]:
@@ -139,25 +139,25 @@ class Interface:
 
 if __name__ == "__main__":
     interface = Interface(Tokenizer())
-    
+
     prefill_model_configs = {
-                                "num_block":8,
-                                "num_head":4,
-                                "embedding_size":128,
+                                "num_block":4,
+                                "num_head":2,
+                                "embedding_size":64,
                                 "use_lora":True,
-                                "weight_map_path":r"models/9_k2v.pkl",
-                                "lora_weights_path":r"lora_weights/9_lora_weights.pkl"
-        
+                                "weight_map_path":r"models/0_k2v.pkl",
+                                "lora_weights_path":r"lora_weights/0_lora_weights.pkl"
+
                             }
     interface.init_prefill_model(prefill_model_configs)
-    
+
     interface.init_decode_model(prefill_model_configs)
-    
-    text_1 = "如何理解乔峰与段誉之间的对照？"
+
+    text_1 = "华筝和其他人物有什么重要联系？"
     text_2 = "清晨的城市刚刚醒来，街边的灯光"
     text_3 = "清晨的城市刚刚醒来"
     text_4 = "郭靖对黄蓉说成吉思汗铁木真已经把华筝许配给他了，他现在是金刀驸马。"
-    
+
     prompts = ["      ",text_1,text_2,text_3,text_4]
     ret = interface.predict(prompts)
     for i in range(len(ret)):

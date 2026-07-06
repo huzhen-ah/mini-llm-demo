@@ -22,9 +22,9 @@ def create_pretrain_model(configs):
     num_head = configs["num_head"]
     embedding_size = configs["embedding_size"]
     hidden_channels = configs["hidden_channels"]
-    use_lora = configs["use_lora"]
     vocab_size = configs["vocab_size"]
     pad_id = configs["pad_id"]
+    use_lora = configs.get("use_lora",False)
     inputs = Input(shape=(None,),dtype="int32",name="inputs")
     padding_mask = K.cast(K.equal(inputs,pad_id),dtype="float32")
     embedding_layer = Embedding(vocab_size,output_dim=embedding_size,name="embedding")
@@ -55,4 +55,3 @@ def create_pretrain_model(configs):
     
 
 
-    

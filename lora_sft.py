@@ -20,9 +20,9 @@ if __name__ == "__main__":
     eos_id = tokenizer_tool.special_ids["<eos>"]   
     pad_id = tokenizer_tool.special_ids["<pad>"]
     
-    num_block = 8
-    num_head = 4
-    embedding_size = 128
+    num_block = 4
+    num_head = 2
+    embedding_size = 64
     vocab_size = len(tokenizer_tool.vocab)
     use_lora = True
     
@@ -37,7 +37,7 @@ if __name__ == "__main__":
                 "vocab_size" : vocab_size,
                 "pad_id" : pad_id
               }
-    weight_map_path = r"models/9_k2v.pkl"
+    weight_map_path = r"models/0_k2v.pkl"
     model = create_pretrain_model(configs)
     apply_train_weights(model, weight_map_path)
     mark_only_lora_as_trainable(model)
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     
     
 
-    
+    print("打印trainable weights")
     for w in model.trainable_weights:
         w_path = w.path
         print("w_path: ",w_path)
@@ -79,4 +79,3 @@ if __name__ == "__main__":
         
     
     
-        
