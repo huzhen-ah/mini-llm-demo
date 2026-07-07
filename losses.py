@@ -37,4 +37,57 @@ def sft_loss(y_true,y_pred):
     down = tf.reduce_sum(mask) + 1e-7
     loss = up / down
     return loss
+
+def dpo_loss(beta=0.1):
+    def _dpo_loss(y_true,y_pred):
+        """
+        SUMMARY.
+    
+        y_true: .shape=(batch*2,m,3)
+                batch*2: 之所以是2个batch,是因为一条数据既有chosen，又有rejected,
+                         前batch个是chosen,后batch个是rejected
+                m      : m就是paddign之后的序列长度
+                3      : chosen_or_rejected_id,logP,mask(有效为1，无效为0)
+        y_pred: .shape=(batch*2,m,vocab_size),前batch个是chosen,后batch个是rejected
+                m同上
+                vocab_size,logits的纬度
+        """
+        batch_2,m = K.shape(y_true)[:2]
+        batch = batch_2 // 2
+        
+        ref_chosen_ids = K.cast(y_true[:batch,:,0],tf.int32)
+        ref_chosen_logp = K.cast(y_true[:batch,:,1],tf.float32)
+        ref_chosen_mask = K.cast(y_true[:batch,:,2],tf.float32)
+        ref_chosen_logp = ref_chosen_logp * ref_chosen_mask
+        
+        ref_rejected_ids = K.cast(y_true[batch:,:,0],tf.int32)
+        ref_rejected_logp = K.cast(y_true[batch:,:,1],tf.float32)
+        ref_rejected_mask = K.cast(y_true[batch:,:,2],tf.float32)
+        ref_rejected_logp = ref_rejected_logp * ref_rejected_mask
+        
+        
+        chosen_pred = y_pred[:batch]
+        rejected_pred = y_pred[batch:]
+        
+
+        chosen_logp = K.take_along_axis(K.log_softmax(chosen_pred,axis=-1), ref_chosen_ids[:,:,None],axis=-1)[:,:,0]
+        chosen_logp = chosen_logp * ref_chosen_mask
+        
+        rejected_logp = K.take_along_axis(K.log_softmax(rejected_pred,axis=-1), ref_rejected_ids[:,:,None],axis=-1)[:,:,0]
+        rejected_logp = rejected_logp * ref_rejected_mask
+        
+
+        tmp = tf.reduce_sum(chosen_logp,axis=-1) - tf.reduce_sum(rejected_logp,axis=-1) \
+            - tf.reduce_sum(ref_chosen_logp,axis=-1) + tf.reduce_sum(ref_rejected_logp,axis=-1)
+        tmp = beta * tmp
+        return -tf.reduce_mean(K.log_sigmoid(tmp))
+    
+        
+    return _dpo_loss
+    
+    
+    
+    
+    
+    
     

@@ -40,3 +40,5 @@ temp/
 venv/
 env/
 ENV/
+DPO_data/
+dpo_weights/

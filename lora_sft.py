@@ -37,7 +37,7 @@ if __name__ == "__main__":
                 "vocab_size" : vocab_size,
                 "pad_id" : pad_id
               }
-    weight_map_path = r"models/0_k2v.pkl"
+    weight_map_path = r"models/9_k2v.pkl"
     model = create_pretrain_model(configs)
     apply_train_weights(model, weight_map_path)
     mark_only_lora_as_trainable(model)
@@ -72,7 +72,7 @@ if __name__ == "__main__":
             
             
     model.fit(data_generator_sft(X_train,batch_size,eos_id,pad_id),
-              epochs=20,
+              epochs=10,
               steps_per_epoch=len(X_train)//(batch_size*1)+1,
               callbacks=[Lora_Evaluate(tokenizer_tool)]
               )  

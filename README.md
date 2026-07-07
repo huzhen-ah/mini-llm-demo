@@ -1,6 +1,6 @@
 # Mini LLM Demo
 
-这是一个基于 Keras / TensorFlow 实现的 mini LLM demo，覆盖从 tokenizer、decoder-only Transformer 预训练、LoRA-SFT，到 prefill / decode KVCache 推理的完整主链路。
+这是一个基于 Keras / TensorFlow 实现的 mini LLM demo，覆盖从 tokenizer、decoder-only Transformer 预训练、LoRA-SFT、DPO 偏好优化，到 prefill / decode KVCache 推理的完整主链路。
 
 ## 项目亮点
 
@@ -8,6 +8,7 @@
 - 实现 decoder-only Transformer，包括 RMSNorm、RoPE、SwiGLU、causal mask 和 padding mask。
 - 支持 next-token prediction 预训练流程。
 - 支持 LoRA-SFT：构造 instruction 数据，使用 answer-only loss mask，在 Attention 和 SwiGLU 中接入 LoRA，只训练 LoRA 参数，并单独保存 / 加载 LoRA 权重。
+- 支持 DPO：构造 chosen / rejected 偏好数据，预计算 reference logp，使用 DPO loss 继续训练 LoRA 参数。
 - 拆分 prefill / decode 推理模型，并实现固定长度 KVCache 更新。
 - 使用 Keras 权重路径映射，在 pretrain / LoRA-SFT / prefill / decode 模型之间迁移参数。
 
@@ -34,12 +35,20 @@ flowchart TB
         O --> Q["LoRA weights"]
     end
 
+    subgraph DPO["DPO"]
+        Q --> R["Reference logp"]
+        R --> S2["DPO loss"]
+        S2 --> T2["DPO LoRA weights"]
+    end
+
     subgraph I["Inference"]
         H --> J["Prefill model"]
         Q --> J
+        T2 --> J
         J --> K["Initial KVCache"]
         K --> L["Decode model"]
         Q --> L
+        T2 --> L
         L --> M["Next token"]
         M --> L
         L --> K
@@ -72,6 +81,12 @@ python pretrain.py
 python lora_sft.py
 ```
 
+可选：在 SFT LoRA 权重基础上进行 DPO 偏好优化：
+
+```bash
+python lora_dpo.py
+```
+
 最后运行推理入口。`interface.py` 可以只加载 base 权重，也可以额外加载 LoRA 权重：
 
 ```bash
@@ -86,6 +101,7 @@ python interface.py
 ├── requirements.txt
 ├── pretrain.py                 # 预训练入口
 ├── lora_sft.py                 # LoRA-SFT 入口
+├── lora_dpo.py                 # LoRA-DPO 入口
 ├── interface.py                # 推理入口
 ├── tokenizer.py                # BBPE tokenizer 编码/解码
 ├── bbpe_trainer.py             # BBPE vocab 与 merge rules 训练
@@ -97,7 +113,7 @@ python interface.py
 ├── rope.py                     # RoPE 实现
 ├── train_utils.py              # 数据加载与训练 batch 生成
 ├── callbacks.py                # 训练时采样与权重保存 callback
-├── losses.py                   # padding-aware loss
+├── losses.py                   # pretrain / SFT / DPO loss
 ├── metrics.py                  # padding-aware accuracy
 ├── sample_utils.py             # top-k sampling
 ├── weight_utils.py             # 权重映射保存/加载
@@ -194,7 +210,27 @@ data_path
 
 训练结束后得到的 LoRA 权重可以在 `interface.py` 中通过 `lora_weights_path` 加载。
 
-### 4. KVCache 推理
+### 4. DPO 偏好优化
+
+`lora_dpo.py` 在 SFT LoRA 权重基础上继续做偏好优化。当前实现采用：
+
+- chosen / rejected 数据格式
+- `prompt + answer + eos` 序列构造
+- answer-only mask
+- 训练前预计算 reference model 的 token-level logp
+- 当前 policy model 实时计算 chosen / rejected logp
+- 使用 DPO loss 优化 LoRA 参数
+- DPO LoRA 权重单独保存到 `dpo_weights/`
+
+运行：
+
+```bash
+python lora_dpo.py
+```
+
+DPO 数据和权重目录默认不随仓库提交。
+
+### 5. KVCache 推理
 
 `interface.py` 负责推理流程：
 

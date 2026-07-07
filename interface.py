@@ -145,8 +145,8 @@ if __name__ == "__main__":
                                 "num_head":2,
                                 "embedding_size":64,
                                 "use_lora":True,
-                                "weight_map_path":r"models/0_k2v.pkl",
-                                "lora_weights_path":r"lora_weights/0_lora_weights.pkl"
+                                "weight_map_path":r"models/9_k2v.pkl",
+                                "lora_weights_path":r"dpo_weights/1_dpo_weights.pkl"
 
                             }
     interface.init_prefill_model(prefill_model_configs)
@@ -154,9 +154,9 @@ if __name__ == "__main__":
     interface.init_decode_model(prefill_model_configs)
 
     text_1 = "华筝和其他人物有什么重要联系？"
-    text_2 = "清晨的城市刚刚醒来，街边的灯光"
-    text_3 = "清晨的城市刚刚醒来"
-    text_4 = "郭靖对黄蓉说成吉思汗铁木真已经把华筝许配给他了，他现在是金刀驸马。"
+    text_2 = "雁门关体现了《天龙八部》里的哪类矛盾？"
+    text_3 = "从人物弧光看，复国执念重要在哪里？"
+    text_4 = "王语嫣体现了《天龙八部》里的哪类矛盾？"
 
     prompts = ["      ",text_1,text_2,text_3,text_4]
     ret = interface.predict(prompts)
