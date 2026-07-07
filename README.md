@@ -106,6 +106,7 @@ python interface.py
 │   ├── bbpe.md                 # BBPE 原理与实现
 │   ├── rope.md                 # 绝对位置编码与 RoPE
 │   ├── kvcache.md              # KVCache 推理机制
+│   ├── lora_sft.md             # LoRA-SFT 原理与实现
 │   └── inference.md            # 推理主流程
 └── experiments/                # 实验脚本与调试脚本
 ```
@@ -115,6 +116,7 @@ python interface.py
 - [BBPE 原理与实现](docs/bbpe.md)
 - [绝对位置编码与 RoPE](docs/rope.md)
 - [KVCache 推理机制](docs/kvcache.md)
+- [LoRA-SFT 原理与实现](docs/lora_sft.md)
 - [推理主流程](docs/inference.md)
 
 ## 核心流程
