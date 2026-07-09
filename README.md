@@ -1,5 +1,5 @@
 # Mini LLM Demo
-数据仅作为学习使用.
+数据仅作为学习使用。
 这是一个基于 Keras / TensorFlow 实现的 mini LLM demo，覆盖从 tokenizer、decoder-only Transformer 预训练、LoRA-SFT、LoRA-DPO，到 prefill / decode KVCache 推理的完整主链路。
 
 ## 项目亮点
