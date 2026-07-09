@@ -495,8 +495,8 @@ if current_vocab_index % 1000 == 0:
 训练结束后会保存两个文件：
 
 ```text
-config/vocab.json
-config/merge_rules.json
+tokenizer_config/vocab.json
+tokenizer_config/merge_rules.json
 ```
 
 `vocab.json` 保存 token id 到 byte 序列的映射：

@@ -6,7 +6,7 @@
 import json
 import regex as re
 class Tokenizer:
-    def __init__(self,vocab_path=r"config/vocab.json",merge_rules_path=r"config/merge_rules.json"):
+    def __init__(self,vocab_path=r"tokenizer_config/vocab.json",merge_rules_path=r"tokenizer_config/merge_rules.json"):
         self.vocab_path = vocab_path
         self.merge_rules_path = merge_rules_path
         self.pattern = r"""'(?:s|t|re|ve|m|ll|d)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+[\s]*"""

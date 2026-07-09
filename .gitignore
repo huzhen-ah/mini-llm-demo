@@ -15,7 +15,7 @@ SFT_data/
 !requirements.txt
 
 # Generated tokenizer files
-config/*.json
+tokenizer_config/*.json
 
 # Model checkpoints and exported weights
 models/

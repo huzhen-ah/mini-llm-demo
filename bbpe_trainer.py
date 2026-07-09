@@ -305,7 +305,7 @@ class BBPETrainer:
         return bytes(new_token_ids).decode("utf8",errors="ignore")
                     
          
-    def save(self,vocab_path=r"config/vocab.json",merge_rules_path=r"config/merge_rules.json"):
+    def save(self,vocab_path=r"tokenizer_config/vocab.json",merge_rules_path=r"tokenizer_config/merge_rules.json"):
         paths = [vocab_path,merge_rules_path]
         for path in paths:
             path_dir = os.path.dirname(path)
@@ -319,8 +319,8 @@ class BBPETrainer:
         
 if __name__ == "__main__":  
     data_path = r"data/*.txt"       
-    vocab_path = r"config/vocab.json"
-    merge_rules_path = r"config/merge_rules.json"
+    vocab_path = r"tokenizer_config/vocab.json"
+    merge_rules_path = r"tokenizer_config/merge_rules.json"
     trainer = BBPETrainer(data_path)
     trainer.build()
     trainer.train()

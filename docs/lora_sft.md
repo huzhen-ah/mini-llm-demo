@@ -336,7 +336,7 @@ model.fit(..., callbacks=[Lora_Evaluate(tokenizer_tool)])
 这里的 `weight_map_path` 是预训练阶段保存的 base 权重映射：
 
 ```text
-models/{epoch}_k2v.pkl
+models/{epoch}_k2v_weights.pkl
 ```
 
 ## 12. LoRA 权重保存
@@ -368,7 +368,7 @@ transformerblock_0/swiGLU/lora_gate_v_A/kernel
 这样 LoRA 权重可以和 base 权重分开管理：
 
 ```text
-base weights : models/*_k2v.pkl
+base weights : models/*_k2v_weights.pkl
 LoRA-SFT weights : lora_sft_weights/*_lora_weights.pkl
 ```
 

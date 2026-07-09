@@ -95,12 +95,21 @@ python lora_dpo.py
 python interface.py
 ```
 
+也可以用 `demo.py` 串起从 tokenizer 训练、预训练、LoRA-SFT、LoRA-DPO 到推理的本地端到端流程：
+
+```bash
+python demo.py
+```
+
+`demo.py` 依赖本地数据和权重目录，仓库不提供训练语料和模型权重。详细说明见：[端到端 demo](docs/demo.md)。
+
 ## 项目结构
 
 ```text
 .
 ├── README.md
 ├── requirements.txt
+├── demo.py                     # 本地端到端流程示例
 ├── pretrain.py                 # 预训练入口
 ├── lora_sft.py                 # LoRA-SFT 入口
 ├── lora_dpo.py                 # LoRA-DPO 入口
@@ -127,6 +136,7 @@ python interface.py
 │   ├── kvcache.md              # KVCache 推理机制
 │   ├── lora_sft.md             # LoRA-SFT 原理与实现
 │   ├── lora_dpo.md             # LoRA-DPO 原理与实现
+│   ├── demo.md                 # 端到端 demo
 │   └── inference.md            # 推理主流程
 └── experiments/                # 实验脚本与调试脚本
 ```
@@ -138,6 +148,7 @@ python interface.py
 - [KVCache 推理机制](docs/kvcache.md)
 - [LoRA-SFT 原理与实现](docs/lora_sft.md)
 - [LoRA-DPO 原理与实现](docs/lora_dpo.md)
+- [端到端 demo](docs/demo.md)
 - [推理主流程](docs/inference.md)
 
 ## 核心流程
@@ -147,8 +158,8 @@ python interface.py
 `bbpe_trainer.py` 会从文本数据中统计 byte pair，并生成：
 
 ```text
-config/vocab.json
-config/merge_rules.json
+tokenizer_config/vocab.json
+tokenizer_config/merge_rules.json
 ```
 
 这两个文件属于 tokenizer 训练产物，默认不随仓库提交。
@@ -177,15 +188,15 @@ python pretrain.py
 
 ```text
 models/{epoch}_model.weights.h5
-models/{epoch}_k2v.pkl
+models/{epoch}_k2v_weights.pkl
 ```
 
 其中：
 
 - `.weights.h5` 是 Keras 原生权重文件
-- `_k2v.pkl` 是 `{weight.path: ndarray}` 形式的权重映射
+- `_k2v_weights.pkl` 是 `{weight.path: ndarray}` 形式的权重映射
 
-推理模型使用 `_k2v.pkl` 进行权重迁移，用于在 pretrain model、prefill model、decode model 之间按权重路径对齐参数。
+推理模型使用 `_k2v_weights.pkl` 进行权重迁移，用于在 pretrain model、prefill model、decode model 之间按权重路径对齐参数。
 
 ### 3. LoRA-SFT
 
@@ -396,7 +407,7 @@ DPO_data/
 models/
 lora_sft_weights/
 lora_dpo_weights/
-config/*.json
+tokenizer_config/*.json
 __pycache__/
 .DS_Store
 *.txt
@@ -404,10 +415,11 @@ __pycache__/
 
 使用时准备纯文本数据，先运行 `bbpe_trainer.py` 生成 tokenizer 配置，再运行 `pretrain.py` 训练模型。
 
+请只使用自己有权使用的数据。学习用途不等于自动获得分发授权，因此本仓库不直接发布第三方语料、由第三方语料生成的 tokenizer 配置或模型权重。
+
 ## Roadmap
 
 - RAG：文档切分、检索、拼接 prompt、生成对比
-- 增加最小运行示例
 - 增加 tokenizer 单元测试
 - 增加 prefill/decode cache shape 检查
 - 完善特殊 token 与 BBPE merge 的处理

@@ -65,7 +65,7 @@ class Evaluate(Callback):
         
         
         self.model.save_weights(r"models/{}_model.weights.h5".format(epoch))
-        save_model_weights(self.model,r"models/{}_k2v.pkl".format(epoch))
+        save_model_weights(self.model,r"models/{}_k2v_weights.pkl".format(epoch))
 
 class Lora_Evaluate(Callback):
     def __init__(self,tokenizer_tool,**kwargs):
