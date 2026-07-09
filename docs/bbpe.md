@@ -538,6 +538,32 @@ for token in ["<bos>", "<eos>", "<unk>", "<pad>"]:
     self.special_ids[token] = len(self.vocab) - 1
 ```
 
+这里有一个明确约定：特殊 token 只通过代码显式拼接 id 进入序列，不通过文本字符串进入 tokenizer。
+
+也就是说，训练和推理代码应该写成：
+
+```python
+ids = tokenizer.encode_text(text)
+ids = ids + [tokenizer.special_ids["<eos>"]]
+```
+
+而不是：
+
+```python
+ids = tokenizer.encode_text(text + "<eos>")
+```
+
+如果原始文本中真的出现 `"<eos>"`、`"<pad>"` 这类可见字符串，它们会被当作普通文本做 BBPE 编码，不会被识别成控制 token。
+
+因此本项目中的特殊 token 规则是：
+
+```text
+文本字符串里的 <eos> : 普通文本
+special_ids["<eos>"] : 控制 token
+```
+
+这样可以让 BBPE 训练保持纯文本逻辑：特殊 token 不参与 vocab/merge rules 训练，也不会进入普通 byte pair merge。
+
 merge rules 会被转换成带 rank 的 dict：
 
 ```python
@@ -617,7 +643,6 @@ return bytes(new_token_ids).decode("utf8", errors="ignore")
 
 - 为 `update()` 增加更细的单元测试。
 - 单独测试重复 pair 场景，例如 `aaaaa`。
-- 更系统地处理特殊 token，避免特殊 token 参与普通 BBPE merge。
 - 增加小语料的可复现实验，方便读者快速跑通。
 
 ## 13. 一句话总结

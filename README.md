@@ -336,6 +336,15 @@ load_segments
 
 `update()` 是 BBPE 训练中最核心的部分：它在合并一个 pair 时，需要同时更新链表结构、`segment.head / segment.tail`、`pair2freq`、`pair2nodes` 和 heap。这里属于状态同步密集型逻辑，因此代码刻意保留在同一个核心流程中，避免拆得过碎导致边界关系更难追踪。
 
+特殊 token 只通过代码显式拼接 id 进入序列，不通过文本字符串进入 tokenizer。例如：
+
+```python
+ids = tokenizer.encode_text(text)
+ids = ids + [tokenizer.special_ids["<eos>"]]
+```
+
+如果原始文本中出现 `"<eos>"` 这类可见字符串，它会被当作普通文本编码，不会被识别成控制 token。因此 BBPE 训练只处理普通文本，`<bos>`、`<eos>`、`<unk>`、`<pad>` 不参与普通 byte pair merge。
+
 ## RoPE 实现特点
 
 RoPE 在 `rope.py` 中实现：
@@ -422,7 +431,6 @@ __pycache__/
 - RAG：文档切分、检索、拼接 prompt、生成对比
 - 增加 tokenizer 单元测试
 - 增加 prefill/decode cache shape 检查
-- 完善特殊 token 与 BBPE merge 的处理
 
 ## 说明
 
