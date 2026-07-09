@@ -52,7 +52,7 @@ class Evaluate(Callback):
             else:
                 print("000")
             text_ids = [int(_) for _ in text_ids[0]] + [pred_id]
-            print("text_ids: ",text_ids)
+            # print("text_ids: ",text_ids)
             
             text = self.tokenizer_tool.decode(text_ids)
             print("text: ",text)
@@ -87,9 +87,9 @@ class Lora_Evaluate(Callback):
             text_ids = self.tokenizer_tool.encode_text(text)
             text_ids = np.array([text_ids])
             preds = self.model.predict(text_ids)
-            print("...y_true: ",text_ids[0][:10])
-            print("...y_pred: ",np.argmax(preds[0][:10],axis=-1))
-            print(".................")
+            # print("...y_true: ",text_ids[0][:10])
+            # print("...y_pred: ",np.argmax(preds[0][:10],axis=-1))
+            # print(".................")
             preds = preds[0][-1]
             preds[self.bos_id] = -1e10
             preds[self.unk_id] = -1e10
@@ -107,7 +107,7 @@ class Lora_Evaluate(Callback):
             else:
                 print("000")
             text_ids = [int(_) for _ in text_ids[0]] + [pred_id]
-            print("text_ids: ",text_ids)
+            # print("text_ids: ",text_ids)
             
             text = self.tokenizer_tool.decode(text_ids)
             print("text: ",text)
@@ -141,9 +141,9 @@ class DPO_Evaluate(Callback):
             text_ids = self.tokenizer_tool.encode_text(text)
             text_ids = np.array([text_ids])
             preds = self.model.predict(text_ids)
-            print("...y_true: ",text_ids[0][:10])
-            print("...y_pred: ",np.argmax(preds[0][:10],axis=-1))
-            print(".................")
+            # print("...y_true: ",text_ids[0][:10])
+            # print("...y_pred: ",np.argmax(preds[0][:10],axis=-1))
+            # print(".................")
             preds = preds[0][-1]
             preds[self.bos_id] = -1e10
             preds[self.unk_id] = -1e10
@@ -161,7 +161,7 @@ class DPO_Evaluate(Callback):
             else:
                 print("000")
             text_ids = [int(_) for _ in text_ids[0]] + [pred_id]
-            print("text_ids: ",text_ids)
+            # print("text_ids: ",text_ids)
             
             text = self.tokenizer_tool.decode(text_ids)
             print("text: ",text)

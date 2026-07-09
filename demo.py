@@ -132,17 +132,17 @@ if __name__ == "__main__":
         
         
     
-        print("打印trainable weights")
-        for w in model.trainable_weights:
-            w_path = w.path
-            print("w_path: ",w_path)
+        # print("打印trainable weights")
+        # for w in model.trainable_weights:
+        #     w_path = w.path
+        #     print("w_path: ",w_path)
         model.compile(optimizer="adam",loss=sft_loss,metrics=[SFTAccuracy()])
                                              # sparse_categorical_crossentropy
         
         
         
         
-        data_path = r"SFT_data/jinyong_sft_messages_clean_v4_5200.jsonl"
+        data_path = r"SFT_data/emperor_sft_messages_v1.jsonl"
         X_train,X_test = load_sft_data(data_path,tokenizer_tool, context_size,test_ratio=0.01)              
         
         print("训练样本数: ",len(X_train))
@@ -200,15 +200,15 @@ if __name__ == "__main__":
         model.summary()
         
 
-        print("打印trainable weights")
-        for w in model.trainable_weights:
-            w_path = w.path
-            print("w_path: ",w_path)
+        # print("打印trainable weights")
+        # for w in model.trainable_weights:
+        #     w_path = w.path
+        #     print("w_path: ",w_path)
         model.compile(optimizer="adam",loss=dpo_loss())
                                              # sparse_categorical_crossentropy
         
         
-        dpo_data_path = r"DPO_data/jinyong_dpo_pairs_5200.jsonl"
+        dpo_data_path = r"DPO_data/emperor_dpo_pairs_v1.jsonl"
         X_train,X_test = load_dpo_data(dpo_data_path, tokenizer_tool, context_size)
         X_train = pre_infer_dpo_data(X_train, model, eos_id, pad_id)
         X_test = pre_infer_dpo_data(X_test, model, eos_id, pad_id)
@@ -245,10 +245,10 @@ if __name__ == "__main__":
 
     interface.init_decode_model(prefill_model_configs)
 
-    text_1 = "华筝和其他人物有什么重要联系？"
-    text_2 = "雁门关体现了《天龙八部》里的哪类矛盾？"
-    text_3 = "从人物弧光看，复国执念重要在哪里？"
-    text_4 = "王语嫣体现了《天龙八部》里的哪类矛盾？"
+    text_1 = "秦始皇是谁？"
+    text_2 = "汉武帝是谁？"
+    text_3 = "唐太宗谁谁？"
+    text_4 = "赵匡胤是谁？"
 
     prompts = ["      ",text_1,text_2,text_3,text_4]
     ret = interface.predict(prompts)

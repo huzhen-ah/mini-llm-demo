@@ -38,7 +38,7 @@ if __name__ == "__main__":
                 "vocab_size" : vocab_size,
                 "pad_id" : pad_id
               }
-    weight_map_path = r"models/9_k2v.pkl"
+    weight_map_path = r"models/0_k2v_weights.pkl"
     model = create_pretrain_model(configs)
     apply_train_weights(model, weight_map_path)
     mark_only_lora_as_trainable(model)
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     
     
     
-    data_path = r"SFT_data/jinyong_sft_messages_clean_v4_5200.jsonl"
+    data_path = r"SFT_data/emperor_sft_messages_v1.jsonl"
     X_train,X_test = load_sft_data(data_path,tokenizer_tool, context_size,test_ratio=0.01)              
     
     print("训练样本数: ",len(X_train))
