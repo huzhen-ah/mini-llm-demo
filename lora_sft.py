@@ -14,6 +14,7 @@ from lora_utils import mark_only_lora_as_trainable
 from callbacks import Lora_Evaluate
 
 
+
 if __name__ == "__main__":
     
     tokenizer_tool = Tokenizer()
@@ -62,20 +63,17 @@ if __name__ == "__main__":
     print("X: ",X_train[:3])
     
     
-    
-    
-              
-    
-    
-                
+
             
             
-            
+    epochs = 1      
     model.fit(data_generator_sft(X_train,batch_size,eos_id,pad_id),
-              epochs=10,
+              epochs=epochs,
               steps_per_epoch=len(X_train)//(batch_size*1)+1,
               callbacks=[Lora_Evaluate(tokenizer_tool)]
               )  
-        
+    
+    
+    
     
     

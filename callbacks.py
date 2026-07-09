@@ -115,10 +115,11 @@ class Lora_Evaluate(Callback):
                 print("长度跳出")
                 break
         # text = tokenizer_tool.decode(text_ids)
-        if not os.path.isdir(r"lora_weights"):
-            os.makedirs(r"lora_weights")
+        if not os.path.isdir(r"lora_sft_weights"):
+            os.makedirs(r"lora_sft_weights")
+
+        save_lora_weights(self.model, r"lora_sft_weights/{}_lora_weights.pkl".format(epoch))
         
-        save_lora_weights(self.model, r"lora_weights/{}_lora_weights.pkl".format(epoch))
         
 class DPO_Evaluate(Callback):
     def __init__(self,tokenizer_tool,**kwargs):
@@ -168,8 +169,8 @@ class DPO_Evaluate(Callback):
                 print("长度跳出")
                 break
         # text = tokenizer_tool.decode(text_ids)
-        if not os.path.isdir(r"dpo_weights"):
-            os.makedirs(r"dpo_weights")
+        if not os.path.isdir(r"lora_dpo_weights"):
+            os.makedirs(r"lora_dpo_weights")
         
-        save_lora_weights(self.model, r"dpo_weights/{}_dpo_weights.pkl".format(epoch))
+        save_lora_weights(self.model, r"lora_dpo_weights/{}_lora_weights.pkl".format(epoch))
         

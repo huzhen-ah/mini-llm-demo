@@ -369,7 +369,7 @@ transformerblock_0/swiGLU/lora_gate_v_A/kernel
 
 ```text
 base weights : models/*_k2v.pkl
-LoRA weights : lora_weights/*_lora_weights.pkl
+LoRA-SFT weights : lora_sft_weights/*_lora_weights.pkl
 ```
 
 ## 13. 推理加载
@@ -397,7 +397,47 @@ base model + LoRA delta
 
 Prefill 和 Decode 都会执行同样的加载逻辑，保证 prompt 阶段和单 token decode 阶段使用同一套 base + LoRA 参数。
 
-## 14. 当前实现的验收点
+## 14. LoRA 权重合并
+
+如果后续要在 SFT 模型基础上继续做 DPO，可以先把 SFT LoRA 合并进 base 权重，得到一个新的 merged base：
+
+```text
+base kernel + LoRA delta -> merged kernel
+```
+
+本项目使用 `merge_lora_checkpoint.py` 完成这个流程：
+
+```text
+1. 创建 use_lora=True 的模型
+2. 加载 base 权重
+3. 加载 SFT LoRA 权重
+4. 调用 merge_lora_weights
+5. 保存合并后的 base 权重映射
+```
+
+以 Keras Dense 为例，kernel 的形状是：
+
+```text
+(input_dim, output_dim)
+```
+
+而 LoRA 前向是：
+
+```python
+out = base_dense(x) + scale * lora_B(lora_A(x))
+```
+
+因此合并到 base kernel 上的增量是：
+
+```python
+delta_kernel = scale * A.kernel @ B.kernel
+```
+
+合并后，`save_model_weights()` 会跳过路径中包含 `lora_` 的权重，只保存已经写入 base kernel 的 merged 权重。
+
+需要注意：merge 是原地写入 base kernel 的操作，不应该对同一个已经 merge 过的模型重复调用，否则 LoRA delta 会被重复加进去。
+
+## 15. 当前实现的验收点
 
 本项目中一个有效的 LoRA-SFT 权重文件应该满足：
 
@@ -426,9 +466,9 @@ SwiGLU   : gate_v/gate_w/out 各 A、B，共 6 个
 4 层合计: 56 个
 ```
 
-如果 `lora_weights/0_lora_weights.pkl` 中有 56 个 LoRA 权重，并且 B 矩阵已经非零，就说明 LoRA 参数确实被训练更新。
+如果 `lora_sft_weights/0_lora_weights.pkl` 中有 56 个 LoRA 权重，并且 B 矩阵已经非零，就说明 LoRA 参数确实被训练更新。
 
-## 15. 小结
+## 16. 小结
 
 本项目的 LoRA-SFT 可以概括为：
 
@@ -440,6 +480,7 @@ messages 数据
   -> 冻结非 LoRA 参数
   -> 只训练 Attention / SwiGLU 中的 LoRA 权重
   -> 单独保存 LoRA 权重
+  -> 按需 merge 成新的 base 权重
   -> 推理时 base + LoRA 叠加
 ```
 

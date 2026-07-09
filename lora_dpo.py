@@ -9,7 +9,7 @@ from models import create_pretrain_model
 from losses import dpo_loss
 from train_utils import load_dpo_data,pre_infer_dpo_data,data_generator_dpo
 from weight_utils import apply_train_weights
-from lora_utils import mark_only_lora_as_trainable,apply_lora_weights
+from lora_utils import mark_only_lora_as_trainable
 from callbacks import DPO_Evaluate
 
 if __name__ == "__main__":
@@ -35,12 +35,12 @@ if __name__ == "__main__":
                 "vocab_size" : vocab_size,
                 "pad_id" : pad_id
               }
-    weight_map_path = r"models/9_k2v.pkl"
-    lora_weights_path = r"lora_weights/9_lora_weights.pkl"
+    
+    lora_merged_weights_path = r"lora_sft_weights/0_k2v_lora_merged.pkl"
     
     model = create_pretrain_model(configs)
-    apply_train_weights(model, weight_map_path)
-    apply_lora_weights(model, lora_weights_path)
+    apply_train_weights(model, lora_merged_weights_path)
+    
     mark_only_lora_as_trainable(model)
     model.summary()
     
@@ -53,8 +53,6 @@ if __name__ == "__main__":
                                          # sparse_categorical_crossentropy
     
     
-    
-    
     dpo_data_path = r"DPO_data/jinyong_dpo_pairs_5200.jsonl"
     X_train,X_test = load_dpo_data(dpo_data_path, tokenizer_tool, context_size)
     X_train = pre_infer_dpo_data(X_train, model, eos_id, pad_id)
@@ -63,18 +61,9 @@ if __name__ == "__main__":
     print("训练样本数: ",len(X_train))
     print("X: ",X_train[:3])
     
-    
-    
-    
-              
-    
-    
-                
-            
-            
-            
+   
     model.fit(data_generator_dpo(X_train, eos_id, pad_id,batch_size=batch_size),
-              epochs=10,
+              epochs=1,
               steps_per_epoch=len(X_train)//(batch_size*1)+1,
               callbacks=[DPO_Evaluate(tokenizer_tool)]
               )  

@@ -146,7 +146,7 @@ if __name__ == "__main__":
                                 "embedding_size":64,
                                 "use_lora":True,
                                 "weight_map_path":r"models/9_k2v.pkl",
-                                "lora_weights_path":r"dpo_weights/1_dpo_weights.pkl"
+                                "lora_weights_path":r"lora_dpo_weights/1_lora_weights.pkl"
 
                             }
     interface.init_prefill_model(prefill_model_configs)

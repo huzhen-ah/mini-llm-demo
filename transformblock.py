@@ -20,6 +20,11 @@ class TransformBlock_Prefill_KVCache(Layer):
         self.attention = AttentionWithRoPE_Prefill_KVCache(self.output_channel,self.num_head,self.cur_layer,alpha=alpha,lora_rank=lora_rank,use_lora=use_lora,name="attention")
         self.ffn = SwiGLU(self.hidden_channel,self.output_channel,alpha=alpha,lora_rank=lora_rank,use_lora=use_lora,name="swiGLU")
         # self.supports_masking = True
+        
+    def merge_lora_weights(self):
+        self.ffn.merge_lora_weights_inplace()
+        self.attention.merge_lora_weights_inplace()
+        
     def call(self,x,mask=None):
         res = x
         x = self.norm_1(x)
@@ -44,6 +49,11 @@ class TransformBlock_Decode_KVCache(Layer):
         self.attention = AttentionWithRoPE_Decode_KVCache(self.output_channel,self.num_head,self.cur_layer,alpha=alpha,lora_rank=lora_rank,use_lora=use_lora,name="attention")
         self.ffn = SwiGLU(self.hidden_channel,self.output_channel,alpha=alpha,lora_rank=lora_rank,use_lora=use_lora,name="swiGLU")
         # self.supports_masking = True
+    
+    def merge_lora_weights(self):
+        self.ffn.merge_lora_weights_inplace()
+        self.attention.merge_lora_weights_inplace()
+        
     def call(self,inputs):
         x,cur_valid_len,kcache,vcache = inputs
         res = x
@@ -68,6 +78,11 @@ class TransformBlock(Layer):
         self.attention = AttentionWithRoPE(self.output_channel,self.num_head,cur_layer,alpha=alpha,lora_rank=lora_rank,use_lora=use_lora,name="attention")
         self.ffn = SwiGLU(self.hidden_channel,self.output_channel,alpha=alpha,lora_rank=lora_rank,use_lora=use_lora,name="swiGLU")
         # self.supports_masking = True
+        
+    def merge_lora_weights(self):
+        self.ffn.merge_lora_weights_inplace()
+        self.attention.merge_lora_weights_inplace()
+        
     def call(self,x,mask=None):
         res = x
         x = self.norm_1(x)

@@ -14,6 +14,8 @@ def save_model_weights(model,weight_map_path):
     for w in model.weights:
         value = w.numpy()
         path = w.path
+        if "lora_" in path:
+            continue
         ws[path] = value
     with open(weight_map_path,"wb") as f:
         pickle.dump(ws,f)
@@ -26,6 +28,8 @@ def apply_train_weights(model,weight_map_path):
         ws = pickle.load(f)
     for w in model.weights:
         w_path = w.path
+        if "lora_" in w_path:
+            continue
         if w_path not in ws:
             missing_ws.append(w_path)
             continue

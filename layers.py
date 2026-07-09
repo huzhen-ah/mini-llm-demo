@@ -54,13 +54,16 @@ class SwiGLU(Layer):
         # self.configure_lora_training()
 
 
-    # def configure_lora_training(self):
-
-    #     for layer in self.base_layers:
-    #         layer.trainable = not self.use_lora
-    #     for layer in self.lora_layers:
-    #         layer.trainable = self.use_lora
-
+    def merge_lora_weights_inplace(self):
+        lora_v_kernel = self.scale * tf.matmul(self.lora_gate_v_A.kernel, self.lora_gate_v_B.kernel)
+        self.v_dense.kernel.assign(self.v_dense.kernel + lora_v_kernel)
+        
+        lora_w_kernel = self.scale *  tf.matmul(self.lora_gate_w_A.kernel,self.lora_gate_w_B.kernel)
+        self.w_dense.kernel.assign(self.w_dense.kernel + lora_w_kernel)
+        
+        lora_out_kernel = self.scale * tf.matmul(self.lora_out_A.kernel, self.lora_out_B.kernel)
+        self.out_dense.kernel.assign(self.out_dense.kernel +  lora_out_kernel)
+        
 
     def call(self,x):
         xv = self.v_dense(x)

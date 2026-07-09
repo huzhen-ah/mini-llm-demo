@@ -19,7 +19,8 @@ config/*.json
 
 # Model checkpoints and exported weights
 models/
-lora_weights/
+lora_sft_weights/
+lora_dpo_weights/
 *.weights.h5
 *.h5
 *.keras
@@ -41,4 +42,3 @@ venv/
 env/
 ENV/
 DPO_data/
-dpo_weights/

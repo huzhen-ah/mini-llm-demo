@@ -39,6 +39,19 @@ class AttentionWithRoPE(Layer):
         self.lora_out_B = Dense(self.output_channel,use_bias=False,kernel_initializer="zeros",name="lora_out_B")
         # self.supports_masking = True
 
+    def merge_lora_weights_inplace(self):
+        lora_q_kernel = self.scale * tf.matmul(self.lora_q_A.kernel, self.lora_q_B.kernel)
+        self.q_dense.kernel.assign(self.q_dense.kernel + lora_q_kernel)
+        
+        lora_k_kernel = self.scale *  tf.matmul(self.lora_k_A.kernel,self.lora_k_B.kernel)
+        self.k_dense.kernel.assign(self.k_dense.kernel + lora_k_kernel)
+        
+        lora_v_kernel = self.scale * tf.matmul(self.lora_v_A.kernel, self.lora_v_B.kernel)
+        self.v_dense.kernel.assign(self.v_dense.kernel + lora_v_kernel)
+        
+        lora_out_kernel = self.scale * tf.matmul(self.lora_out_A.kernel, self.lora_out_B.kernel)
+        self.out_dense.kernel.assign(self.out_dense.kernel +  lora_out_kernel)
+        
     def reshape_and_transpose(self,x):
         b,t,s = K.shape(x)
         x = tf.reshape(x, (-1,t,self.num_head,s//self.num_head))
@@ -116,6 +129,19 @@ class AttentionWithRoPE_Prefill_KVCache(Layer):
         self.lora_out_B = Dense(self.output_channel,use_bias=False,kernel_initializer="zeros",name="lora_out_B")
         # self.supports_masking = True
 
+    def merge_lora_weights_inplace(self):
+        lora_q_kernel = self.scale * tf.matmul(self.lora_q_A.kernel, self.lora_q_B.kernel)
+        self.q_dense.kernel.assign(self.q_dense.kernel + lora_q_kernel)
+        
+        lora_k_kernel = self.scale *  tf.matmul(self.lora_k_A.kernel,self.lora_k_B.kernel)
+        self.k_dense.kernel.assign(self.k_dense.kernel + lora_k_kernel)
+        
+        lora_v_kernel = self.scale * tf.matmul(self.lora_v_A.kernel, self.lora_v_B.kernel)
+        self.v_dense.kernel.assign(self.v_dense.kernel + lora_v_kernel)
+        
+        lora_out_kernel = self.scale * tf.matmul(self.lora_out_A.kernel, self.lora_out_B.kernel)
+        self.out_dense.kernel.assign(self.out_dense.kernel +  lora_out_kernel)
+        
     def reshape_and_transpose(self,x):
         b,t,s = K.shape(x)
         x = tf.reshape(x, (-1,t,self.num_head,s//self.num_head))
@@ -204,6 +230,19 @@ class AttentionWithRoPE_Decode_KVCache(Layer):
         self.lora_out_A = Dense(self.lora_rank,use_bias=False,name="lora_out_A")
         self.lora_out_B = Dense(self.output_channel,use_bias=False,kernel_initializer="zeros",name="lora_out_B")
 
+    def merge_lora_weights_inplace(self):
+        lora_q_kernel = self.scale * tf.matmul(self.lora_q_A.kernel, self.lora_q_B.kernel)
+        self.q_dense.kernel.assign(self.q_dense.kernel + lora_q_kernel)
+        
+        lora_k_kernel = self.scale * tf.matmul(self.lora_k_A.kernel,self.lora_k_B.kernel)
+        self.k_dense.kernel.assign(self.k_dense.kernel + lora_k_kernel)
+        
+        lora_v_kernel = self.scale * tf.matmul(self.lora_v_A.kernel, self.lora_v_B.kernel)
+        self.v_dense.kernel.assign(self.v_dense.kernel + lora_v_kernel)
+        
+        lora_out_kernel = self.scale * tf.matmul(self.lora_out_A.kernel, self.lora_out_B.kernel)
+        self.out_dense.kernel.assign(self.out_dense.kernel +  lora_out_kernel)
+        
     def reshape_and_transpose(self,x):
         b,t,s = K.shape(x)
         x = tf.reshape(x, (-1,t,self.num_head,s//self.num_head))

@@ -63,4 +63,7 @@ def apply_lora_weights(model,weight_map_path):
     print(f"lora权重加载完成: success={loaded}, missing={len(missing_ws)}, shape_mismatch={len(shape_mismatch_ws)}")
 
 
-
+def merge_lora_weights(model):
+    for layer in model.layers:
+        if hasattr(layer, "merge_lora_weights"):
+            layer.merge_lora_weights()
