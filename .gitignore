@@ -9,23 +9,12 @@ __pycache__/
 .DS_Store
 
 # Local data and corpus files
-data/
-SFT_data/
-*.txt
+
+
 !requirements.txt
 
-# Generated tokenizer files
-tokenizer_config/*.json
 
 # Model checkpoints and exported weights
-models/
-lora_sft_weights/
-lora_dpo_weights/
-*.weights.h5
-*.h5
-*.keras
-*_k2v.pkl
-*.pkl
 
 # Logs and temporary outputs
 logs/
@@ -41,4 +30,3 @@ temp/
 venv/
 env/
 ENV/
-DPO_data/
