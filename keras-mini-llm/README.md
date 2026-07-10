@@ -453,9 +453,9 @@ DPO_data/emperor_dpo_pairs_v1.jsonl
 | 预训练 | `models/{epoch}_model.weights.h5` | Keras 原生权重，可用于同结构模型恢复 |
 | 预训练 | `models/{epoch}_k2v_weights.pkl` | 按权重路径迁移到 SFT、prefill 和 decode 模型 |
 | LoRA-SFT | `lora_sft_weights/{epoch}_lora_weights.pkl` | 在 base 权重上叠加 SFT LoRA |
-| SFT 合并 | `lora_sft_weights/{epoch}_k2v_lora_merged.pkl` | 作为 DPO 阶段的 reference/base 权重 |
+| SFT 合并 | `lora_sft_weights/{epoch}_k2v_lora_merged_weights.pkl` | 作为 DPO 阶段的 reference/base 权重 |
 | LoRA-DPO | `lora_dpo_weights/{epoch}_lora_weights.pkl` | 在 SFT merged base 上叠加 DPO LoRA |
-| DPO 合并 | `lora_dpo_weights/{epoch}_k2v_lora_merged.pkl` | 直接以 `use_lora=False` 运行推理 |
+| DPO 合并 | `lora_dpo_weights/{epoch}_k2v_lora_merged_weights.pkl` | 直接以 `use_lora=False` 运行推理 |
 
 独立训练脚本的 callback 会保存 LoRA 增量权重；`demo.py` 还会在每个 LoRA 阶段结束后执行合并并保存 merged 权重。若手动串联独立脚本，请确认脚本中的 epoch 编号和文件路径指向实际生成的 checkpoint。
 

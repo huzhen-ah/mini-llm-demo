@@ -101,7 +101,7 @@ if __name__ == "__main__":
     """
 
     print(".........LoRA_SFT阶段开始.........")
-    if not os.path.isfile(r"lora_sft_weights/0_k2v_lora_merged.pkl"):
+    if not os.path.isfile(r"lora_sft_weights/0_k2v_lora_merged_weights.pkl"):
         tokenizer_tool = Tokenizer()
         eos_id = tokenizer_tool.special_ids["<eos>"]   
         pad_id = tokenizer_tool.special_ids["<pad>"]
@@ -124,7 +124,7 @@ if __name__ == "__main__":
                     "pad_id" : pad_id
                   }
         weight_map_path = r"models/0_k2v_weights.pkl"
-        merged_weight_map_path = "lora_sft_weights/0_k2v_lora_merged.pkl"
+        merged_weight_map_path = "lora_sft_weights/0_k2v_lora_merged_weights.pkl"
         model = create_pretrain_model(configs)
         apply_train_weights(model, weight_map_path)
         mark_only_lora_as_trainable(model)
@@ -168,7 +168,7 @@ if __name__ == "__main__":
         用DPO_data做偏好优化，base模型用的是SFT阶段merged，微调方式是LoRA
     """
     print(".........LoRA_DPO阶段开始.........")
-    if not os.path.isfile(r"lora_dpo_weights/0_k2v_lora_merged.pkl"):
+    if not os.path.isfile(r"lora_dpo_weights/0_k2v_lora_merged_weights.pkl"):
         tokenizer_tool = Tokenizer()
         eos_id = tokenizer_tool.special_ids["<eos>"]   
         pad_id = tokenizer_tool.special_ids["<pad>"]
@@ -191,7 +191,7 @@ if __name__ == "__main__":
                     "pad_id" : pad_id
                   }
         
-        lora_merged_weights_path = r"lora_sft_weights/0_k2v_lora_merged.pkl"
+        lora_merged_weights_path = r"lora_sft_weights/0_k2v_lora_merged_weights.pkl"
         
         model = create_pretrain_model(configs)
         apply_train_weights(model, lora_merged_weights_path)
@@ -223,7 +223,7 @@ if __name__ == "__main__":
                   callbacks=[DPO_Evaluate(tokenizer_tool)]
                   )  
         merge_lora_weights(model)
-        lora_merged_weights_path = r"lora_dpo_weights/0_k2v_lora_merged.pkl"
+        lora_merged_weights_path = r"lora_dpo_weights/0_k2v_lora_merged_weights.pkl"
         save_model_weights(model, lora_merged_weights_path)
     print(".........LoRA_DPO阶段结束.........")
     
@@ -239,7 +239,7 @@ if __name__ == "__main__":
                                 "num_head":2,
                                 "embedding_size":64,
                                 "use_lora":False,
-                                "weight_map_path":r"lora_dpo_weights/0_k2v_lora_merged.pkl"
+                                "weight_map_path":r"lora_dpo_weights/0_k2v_lora_merged_weights.pkl"
                             }
     interface.init_prefill_model(prefill_model_configs)
 

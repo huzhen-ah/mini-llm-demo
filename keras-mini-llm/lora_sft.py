@@ -60,7 +60,7 @@ if __name__ == "__main__":
     X_train,X_test = load_sft_data(data_path,tokenizer_tool, context_size,test_ratio=0.01)              
     
     print("训练样本数: ",len(X_train))
-    print("X: ",X_train[:3])
+    # print("X: ",X_train[:3])
     
     
 

@@ -36,7 +36,7 @@ if __name__ == "__main__":
                 "pad_id" : pad_id
               }
     
-    lora_merged_weights_path = r"lora_sft_weights/0_k2v_lora_merged.pkl"
+    lora_merged_weights_path = r"lora_sft_weights/0_k2v_lora_merged_weights.pkl"
     
     model = create_pretrain_model(configs)
     apply_train_weights(model, lora_merged_weights_path)
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     X_test = pre_infer_dpo_data(X_test, model, eos_id, pad_id)
     
     print("训练样本数: ",len(X_train))
-    print("X: ",X_train[:3])
+    # print("X: ",X_train[:3])
     
    
     model.fit(data_generator_dpo(X_train, eos_id, pad_id,batch_size=batch_size),

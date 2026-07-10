@@ -38,7 +38,7 @@ if __name__ == "__main__":
               }
     weight_map_path = r"models/0_k2v_weights.pkl"
     lora_weight_map_path = r"lora_sft_weights/0_lora_weights.pkl"
-    merged_weight_map_path = r"lora_sft_weights/0_k2v_lora_merged.pkl"
+    merged_weight_map_path = r"lora_sft_weights/0_k2v_lora_merged_weights.pkl"
     
     model = create_pretrain_model(configs)
     apply_train_weights(model, weight_map_path)

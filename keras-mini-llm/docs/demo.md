@@ -74,7 +74,7 @@ models/0_k2v_weights.pkl
 如果不存在：
 
 ```text
-lora_sft_weights/0_k2v_lora_merged.pkl
+lora_sft_weights/0_k2v_lora_merged_weights.pkl
 ```
 
 脚本会加载 pretrain base 权重，开启 LoRA，只训练 LoRA 参数，然后把 SFT LoRA 合并进 base 权重。
@@ -84,7 +84,7 @@ lora_sft_weights/0_k2v_lora_merged.pkl
 如果不存在：
 
 ```text
-lora_dpo_weights/0_k2v_lora_merged.pkl
+lora_dpo_weights/0_k2v_lora_merged_weights.pkl
 ```
 
 脚本会加载 SFT merged base，开启新的 LoRA 参数，用 DPO loss 训练 chosen/rejected 偏好数据，然后再保存 DPO merged base。
@@ -94,7 +94,7 @@ lora_dpo_weights/0_k2v_lora_merged.pkl
 最后脚本会加载：
 
 ```text
-lora_dpo_weights/0_k2v_lora_merged.pkl
+lora_dpo_weights/0_k2v_lora_merged_weights.pkl
 ```
 
 并使用 `Interface` 跑 prefill/decode KVCache 推理。
