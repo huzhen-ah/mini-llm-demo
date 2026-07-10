@@ -465,9 +465,23 @@ DPO_data/emperor_dpo_pairs_v1.jsonl
 
 ## Roadmap
 
-- RAG：文档切分、检索、拼接 prompt、生成对比
-- 增加 tokenizer 单元测试
-- 增加 prefill/decode cache shape 检查
+已完成：
+
+- [x] Byte-level BPE tokenizer 训练与编码/解码
+- [x] Decoder-only Transformer 预训练
+- [x] LoRA-SFT 与 answer-only loss mask
+- [x] LoRA-DPO 与 reference logp 预计算
+- [x] LoRA 增量权重保存、加载与 merged checkpoint
+- [x] Prefill/decode 拆分与 KVCache 推理
+- [x] 端到端 `demo.py`
+
+下一步：
+
+- [ ] 增加 tokenizer 单元测试
+- [ ] 增加训练、权重迁移和推理 smoke test
+- [ ] 增加 prefill/decode cache shape 与有效长度检查
+- [ ] 抽离统一配置，减少训练和推理脚本中的硬编码路径
+- [ ] RAG：文档切分、检索、prompt 拼接与生成效果对比
 
 ## 说明
 
