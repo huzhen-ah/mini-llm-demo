@@ -477,6 +477,7 @@ DPO_data/emperor_dpo_pairs_v1.jsonl
 
 下一步：
 
+- [ ] 将当前 Keras / TensorFlow 实现迁移为 PyTorch 版本
 - [ ] RAG：文档切分、检索、prompt 拼接与生成效果对比
 
 ## 说明
