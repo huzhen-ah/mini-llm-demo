@@ -60,6 +60,13 @@ flowchart TB
 
 ## 快速开始
 
+建议使用 Python 3.10+，并在虚拟环境中安装依赖：
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
 安装依赖：
 
 ```bash
@@ -104,6 +111,8 @@ python demo.py
 ```
 
 `demo.py` 依赖本地数据、tokenizer 配置和模型权重目录。仓库当前提供一份用于跑通流程的历史语料与 SFT / DPO 示例数据，权重文件可按本地训练结果生成或替换。详细说明见：[端到端 demo](docs/demo.md)。
+
+> `demo.py` 默认每个训练阶段只运行 1 个 epoch，主要用于验证代码链路是否畅通，不代表模型已经充分训练。完整训练可分别调整 `pretrain.py`、`lora_sft.py` 和 `lora_dpo.py` 中的 epoch、batch size 与模型配置。
 
 ## 项目结构
 
@@ -312,7 +321,7 @@ num_block = 4
 num_head = 2
 embedding_size = 64
 context_size = 200
-batch_size = 64
+batch_size = 128
 ```
 
 这是用于本地快速验证的默认小配置，可以按机器资源调整模型规模与训练数据。
@@ -437,6 +446,19 @@ DPO_data/emperor_dpo_pairs_v1.jsonl
 - LoRA-DPO 权重：`lora_dpo_weights/`
 - Python 缓存和系统文件：`__pycache__/`、`.DS_Store`
 
+主要权重文件之间的关系如下：
+
+| 阶段 | 默认产物 | 后续用途 |
+| --- | --- | --- |
+| 预训练 | `models/{epoch}_model.weights.h5` | Keras 原生权重，可用于同结构模型恢复 |
+| 预训练 | `models/{epoch}_k2v_weights.pkl` | 按权重路径迁移到 SFT、prefill 和 decode 模型 |
+| LoRA-SFT | `lora_sft_weights/{epoch}_lora_weights.pkl` | 在 base 权重上叠加 SFT LoRA |
+| SFT 合并 | `lora_sft_weights/{epoch}_k2v_lora_merged.pkl` | 作为 DPO 阶段的 reference/base 权重 |
+| LoRA-DPO | `lora_dpo_weights/{epoch}_lora_weights.pkl` | 在 SFT merged base 上叠加 DPO LoRA |
+| DPO 合并 | `lora_dpo_weights/{epoch}_k2v_lora_merged.pkl` | 直接以 `use_lora=False` 运行推理 |
+
+独立训练脚本的 callback 会保存 LoRA 增量权重；`demo.py` 还会在每个 LoRA 阶段结束后执行合并并保存 merged 权重。若手动串联独立脚本，请确认脚本中的 epoch 编号和文件路径指向实际生成的 checkpoint。
+
 这些文件是否提交到仓库，取决于当前 demo 版本需要。作为工程实践，正式项目中通常会把大模型权重和大规模训练数据放到外部存储，只在仓库中保留下载说明、配置和小样例。
 
 如果替换数据，请只使用自己有权使用的数据。学习用途不等于自动获得分发授权。
@@ -455,6 +477,7 @@ DPO_data/emperor_dpo_pairs_v1.jsonl
 BBPE tokenizer
   -> decoder-only Transformer pretraining
   -> LoRA-SFT
+  -> LoRA-DPO
   -> weight mapping
   -> prefill / decode model
   -> KVCache inference

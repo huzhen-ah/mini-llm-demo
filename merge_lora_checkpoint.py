@@ -36,7 +36,7 @@ if __name__ == "__main__":
                 "vocab_size" : vocab_size,
                 "pad_id" : pad_id
               }
-    weight_map_path = r"models/9_k2v.pkl"
+    weight_map_path = r"models/0_k2v_weights.pkl"
     lora_weight_map_path = r"lora_sft_weights/0_lora_weights.pkl"
     merged_weight_map_path = r"lora_sft_weights/0_k2v_lora_merged.pkl"
     

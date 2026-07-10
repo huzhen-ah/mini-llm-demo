@@ -14,12 +14,13 @@ BBPE tokenizer
 
 ## 1. 本地文件准备
 
-仓库不包含训练语料、SFT/DPO 数据、tokenizer 配置或模型权重。运行 `demo.py` 前，需要在本地准备这些目录：
+仓库已经提供用于跑通流程的小型历史语料、SFT/DPO 示例数据和 tokenizer 配置。运行 `demo.py` 前，请确认以下目录存在：
 
 ```text
 data/
 SFT_data/
 DPO_data/
+tokenizer_config/
 ```
 
 其中：
@@ -28,7 +29,10 @@ DPO_data/
 data/      : 预训练纯文本语料
 SFT_data/  : LoRA-SFT jsonl 数据
 DPO_data/  : LoRA-DPO chosen/rejected jsonl 数据
+tokenizer_config/ : tokenizer vocab 与 merge rules
 ```
+
+模型权重不会作为运行前提；对应 checkpoint 不存在时，`demo.py` 会按顺序训练并生成。你也可以替换为自己的数据和 tokenizer 配置。
 
 请只使用自己有权使用的数据。学习用途不等于自动获得分发授权。
 

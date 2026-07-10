@@ -65,7 +65,7 @@ if __name__ == "__main__":
             
             
     model.fit(data_generator(X_train,batch_size,eos_id),
-              epochs=10,
+              epochs=1,
               steps_per_epoch=len(X_train)//(batch_size*1)+1,
               callbacks=[Evaluate(tokenizer_tool)])       
         
