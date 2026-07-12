@@ -7,6 +7,7 @@ from tokenizer import Tokenizer
 
 from models import create_pretrain_model
 from losses import pretrain_loss
+from metrics import pretrain_accuray
 import torch
 from torch.utils.data import DataLoader
 
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     model = create_pretrain_model(configs)
     
     model = model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     
     
     
@@ -58,6 +59,8 @@ if __name__ == "__main__":
     for epoch in range(epochs):
         total_loss = 0
         num_batch = 0
+        total_correct = 0
+        total_valid = 0
         for X,Y in train_dataloader:
             X = X.to(device)
             Y = Y.to(device=device,dtype=torch.long)
@@ -67,8 +70,11 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
+            correct,valid = pretrain_accuray(output, Y, pad_id)
+            total_correct += correct
+            total_valid += valid
             num_batch += 1
-        print("Epoch: {},loss={}".format(epoch,total_loss/num_batch))
+        print("Epoch: {},loss={},accuracy:{}".format(epoch,total_loss/num_batch,total_correct/total_valid))
         
         
             

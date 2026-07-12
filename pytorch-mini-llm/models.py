@@ -28,6 +28,7 @@ def create_pretrain_model(configs):
             self.num_block = num_block
             self.num_head = num_head
             self.embedding_dim = embedding_dim
+            
             self.hidden_channels = hidden_channels
             self.vocab_size = vocab_size
             self.pad_id = pad_id
