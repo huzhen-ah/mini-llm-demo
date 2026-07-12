@@ -7,7 +7,7 @@
 | 版本 | 状态 | 说明 |
 | --- | --- | --- |
 | [keras-mini-llm](keras-mini-llm/) | 已完成 | Keras / TensorFlow 实现，覆盖 BBPE、预训练、LoRA-SFT、LoRA-DPO 和 KVCache 推理 |
-| [pytorch-mini-llm](pytorch-mini-llm/) | 进行中 | PyTorch 对应实现 |
+| [pytorch-mini-llm](pytorch-mini-llm/) | 进行中 | 已完成 BBPE、预训练模型、Dataset / DataLoader、loss 和 accuracy；LoRA 与 KVCache 待迁移 |
 
 ## 目录结构
 
@@ -20,4 +20,4 @@
 
 两个版本各自保持完整、可独立阅读的工程结构。这样会保留少量重复代码，但更适合逐文件对照学习，也避免读者为了理解一个版本而跨目录寻找公共实现。
 
-当前 Keras 版本的运行方式、项目结构和技术说明见：[keras-mini-llm/README.md](keras-mini-llm/README.md)。
+当前 Keras 版本的运行方式、项目结构和技术说明见：[keras-mini-llm/README.md](keras-mini-llm/README.md)。PyTorch 版本的已完成内容和待办项见：[pytorch-mini-llm/README.md](pytorch-mini-llm/README.md)。
