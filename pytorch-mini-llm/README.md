@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-PyTorch 版本已经跑通 decoder-only Transformer 的预训练主链路：
+PyTorch 版本已经实现 decoder-only Transformer 的预训练和 KVCache 推理主链路：
 
 ```text
 文本语料
@@ -19,6 +19,8 @@ PyTorch 版本已经跑通 decoder-only Transformer 的预训练主链路：
   -> validation
   -> top-k sampling
   -> state_dict checkpoint
+  -> prefill
+  -> KVCache decode
 ```
 
 已完成：
@@ -36,15 +38,18 @@ PyTorch 版本已经跑通 decoder-only Transformer 的预训练主链路：
 - 训练期间的 Top-k 自回归采样。
 - 基于 `state_dict` 的 base model 权重保存和加载。
 - Attention 和 SwiGLU 中的 LoRA 层结构及权重合并方法。
+- Prefill / decode 模型拆分。
+- Prefill 阶段的逐层 K/V 收集。
+- Decode 阶段的 KVCache 原地更新。
+- 支持不同 prompt 长度和动态 batch 裁剪的推理接口。
+- LoRA-only 权重保存、加载和 merged weight 工具。
 
 尚未完成：
 
 - LoRA-SFT 训练流程。
 - LoRA-DPO 训练流程。
-- LoRA-only 权重的完整保存、加载流程。
-- Prefill / decode 模型。
-- KVCache 推理。
-- 完整的采样和对话入口。
+- 端到端 `demo.py`。
+- 面向多轮对话的 chat template 和完整对话入口。
 
 ## 当前模型
 
@@ -80,6 +85,40 @@ loss 和 accuracy 都会忽略 `pad_id`。
 
 每个 epoch 结束后，当前代码会运行验证、生成一段示例文本，并将不含 LoRA 参数的 base model `state_dict` 保存到本地 `models/` 目录。这些 checkpoint 是本地训练产物，不提交到 Git。
 
+## KVCache 推理
+
+PyTorch 推理拆分为两个阶段：
+
+```text
+完整 prompt
+  -> Prefill Model
+  -> 初始 K/V cache
+  -> 采样第一个 token
+  -> Decode Model 逐 token 更新 cache
+```
+
+整体 KVCache 使用统一布局：
+
+```text
+[layer, batch, head, max_time, head_dim]
+```
+
+每个 Decode Transformer Block 只接收当前层的 cache：
+
+```text
+[batch, head, max_time, head_dim]
+```
+
+Decode Attention 根据每条样本的 `cur_valid_len - 1` 写入当前 token 的 K/V。生成结束的样本会与 KVCache 的 batch 维同步裁剪。
+
+当前推理示例可通过以下命令运行：
+
+```bash
+python interface.py
+```
+
+`interface.py` 中的模型结构参数和 checkpoint 路径需要与实际预训练产物保持一致。
+
 ## 语料与生成效果
 
 仓库当前附带的预训练语料是小规模中国历代帝王人物文本。它适合验证 tokenizer、Transformer、loss、训练、权重保存和生成链路，但不适合训练通用中文生成模型。
@@ -91,19 +130,22 @@ loss 和 accuracy 都会忽略 `pad_id`。
 ## 主要文件
 
 ```text
-attention.py       # RoPE multi-head causal self-attention
+attention.py       # RoPE multi-head attention 与 KVCache attention
 bbpe_trainer.py    # BBPE 训练
 layers.py          # RMSNorm 和 SwiGLU
 losses.py          # padding-aware pretraining loss
 metrics.py         # padding-aware token accuracy
 models.py          # 预训练模型
+inference_models.py # Prefill / decode 推理模型
+interface.py       # KVCache 自回归采样入口
+lora_utils.py      # LoRA 参数冻结、保存、加载与合并
 pretrain.py        # 训练入口和训练循环
 callbacks.py       # epoch 结束采样与权重保存
 rope.py            # RoPE
 sample_utils.py    # Top-k sampling
 tokenizer.py       # tokenizer 编码与解码
 train_utils.py     # 语料加载和 Dataset
-transformblock.py  # Transformer Block
+transformblock.py  # 预训练、prefill 和 decode Transformer Block
 weight_utils.py    # state_dict 保存与加载
 data/              # 预训练文本语料
 tokenizer_config/  # vocab 和 merge rules
@@ -117,6 +159,8 @@ tokenizer_config/  # vocab 和 merge rules
 - Keras 和 PyTorch `Embedding` 的默认初始化不同；当前 PyTorch 版本已将 Embedding 初始化为 `[-0.05, 0.05]` 均匀分布。
 - TensorFlow 通常使用 `int32` token IDs，PyTorch cross entropy target 使用 `torch.long`。
 - Keras 通过 `compile/fit` 管理训练，PyTorch 显式编写 forward、backward 和 optimizer step。
+- Keras KVCache 更新需要构造 scatter indices；PyTorch decode 直接按 batch 和 time 索引原地写入 cache。
+- Keras 推理在模型输入输出侧使用 batch-first cache；PyTorch 全程保持 `[layer, batch, head, time, head_dim]`。
 - 即使结构一致，两边的随机初始化和 shuffle 顺序也会导致不同的训练曲线。
 
 当前阶段主要目标是完成 PyTorch 版本的逐步翻译和对照学习，不保证两个框架在独立随机初始化下得到相同的 epoch 指标。
