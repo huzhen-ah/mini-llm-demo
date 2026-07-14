@@ -1,23 +1,35 @@
 # Mini LLM Demo
 
-这是一个面向学习与教学的 mini LLM 项目，计划使用 Keras / TensorFlow 和 PyTorch 分别实现同一条完整链路，方便对照两个框架中的模型结构、训练流程与推理实现。
+这是一个面向学习与教学的 mini LLM 项目，分别使用 Keras / TensorFlow 和 PyTorch 实现同一条训练与推理链路，用于对照两个框架中的模型结构、训练流程、权重管理和 KVCache 实现。
 
-## 两个版本
+## 项目链路
 
-| 版本 | 状态 | 说明 |
-| --- | --- | --- |
-| [keras-mini-llm](keras-mini-llm/) | 已完成 | Keras / TensorFlow 实现，覆盖 BBPE、预训练、LoRA-SFT、LoRA-DPO 和 KVCache 推理 |
-| [pytorch-mini-llm](pytorch-mini-llm/) | 进行中 | 已跑通预训练、验证、Top-k 采样和 base 权重保存；LoRA 训练与 KVCache 待迁移 |
+```text
+BBPE tokenizer
+  -> decoder-only Transformer pretraining
+  -> LoRA-SFT
+  -> LoRA-DPO
+  -> Prefill / decode
+  -> KVCache inference
+  -> end-to-end demo
+```
+
+## 实现进度
+
+| 版本 | 当前状态 |
+| --- | --- |
+| [Keras / TensorFlow](keras-mini-llm/) | 已完成预训练、LoRA-SFT、LoRA-DPO、Prefill / Decode、KVCache 推理和端到端 demo |
+| [PyTorch](pytorch-mini-llm/) | 已完成预训练、验证与采样、checkpoint、Prefill / Decode 和 KVCache 推理；LoRA-SFT、LoRA-DPO 与端到端 demo 待完成 |
 
 ## 目录结构
 
 ```text
 .
-├── README.md
 ├── keras-mini-llm/       # Keras / TensorFlow 完整版本
-└── pytorch-mini-llm/     # PyTorch 版本
+├── pytorch-mini-llm/     # PyTorch 对照实现
+└── README.md
 ```
 
-两个版本各自保持完整、可独立阅读的工程结构。这样会保留少量重复代码，但更适合逐文件对照学习，也避免读者为了理解一个版本而跨目录寻找公共实现。
+两个版本各自保持完整、可独立运行的工程结构。少量重复代码用于保留清晰的一一对应关系，便于逐文件比较两个框架的实现差异。
 
-当前 Keras 版本的运行方式、项目结构和技术说明见：[keras-mini-llm/README.md](keras-mini-llm/README.md)。PyTorch 版本的已完成内容和待办项见：[pytorch-mini-llm/README.md](pytorch-mini-llm/README.md)。
+详细的运行方式、文件说明和后续计划见各版本目录中的 README。
