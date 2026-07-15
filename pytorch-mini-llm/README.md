@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-PyTorch 版本已经实现 decoder-only Transformer 的预训练、LoRA-SFT 和 KVCache 推理主链路：
+PyTorch 版本已经实现 decoder-only Transformer 预训练、LoRA-SFT、LoRA-DPO 和 KVCache 推理的完整主链路：
 
 ```text
 文本语料
@@ -20,8 +20,10 @@ PyTorch 版本已经实现 decoder-only Transformer 的预训练、LoRA-SFT 和 
   -> top-k sampling
   -> state_dict checkpoint
   -> LoRA-SFT
+  -> LoRA-DPO
   -> prefill
   -> KVCache decode
+  -> end-to-end demo
 ```
 
 已完成：
@@ -47,11 +49,12 @@ PyTorch 版本已经实现 decoder-only Transformer 的预训练、LoRA-SFT 和 
 - SFT JSONL 数据加载、batch 内动态 padding 和 response-only mask。
 - 逐 token masked SFT loss 和 SFT token accuracy。
 - 冻结 base model、仅优化 LoRA 参数的训练流程。
+- DPO chosen/rejected 数据加载、reference logp 预计算和动态 batch padding。
+- PyTorch DPO loss、LoRA-DPO 训练、验证与权重合并。
+- 从 tokenizer、预训练、LoRA-SFT、LoRA-DPO 到 KVCache 推理的端到端 `demo.py`。
 
 尚未完成：
 
-- LoRA-DPO 训练流程。
-- 端到端 `demo.py`。
 - 面向多轮对话的 chat template 和完整对话入口。
 
 ## 当前模型
@@ -157,7 +160,7 @@ python interface.py
 attention.py       # RoPE multi-head attention 与 KVCache attention
 bbpe_trainer.py    # BBPE 训练
 layers.py          # RMSNorm 和 SwiGLU
-losses.py          # pretraining loss 与 response-masked SFT loss
+losses.py          # pretraining、response-masked SFT 与 DPO loss
 metrics.py         # pretraining accuracy 与 response-masked SFT accuracy
 models.py          # 预训练模型
 inference_models.py # Prefill / decode 推理模型
@@ -165,15 +168,18 @@ interface.py       # KVCache 自回归采样入口
 lora_utils.py      # LoRA 参数冻结、保存、加载与合并
 pretrain.py        # 训练入口和训练循环
 lora_sft.py        # LoRA-SFT 训练入口
+lora_dpo.py        # LoRA-DPO 训练入口
+demo.py            # tokenizer 到 DPO、KVCache 推理的端到端流程
 callbacks.py       # epoch 结束采样与权重保存
 rope.py            # RoPE
 sample_utils.py    # Top-k sampling
 tokenizer.py       # tokenizer 编码与解码
-train_utils.py     # 预训练/SFT 数据加载、Dataset 与 SFT collate_fn
+train_utils.py     # 预训练、SFT、DPO 数据加载、Dataset 与 collate_fn
 transformblock.py  # 预训练、prefill 和 decode Transformer Block
 weight_utils.py    # state_dict 保存与加载
 data/              # 预训练文本语料
 SFT_data/          # messages JSONL 格式的 SFT 数据
+DPO_data/          # chosen/rejected JSONL 格式的 DPO 数据
 models/            # 已提交的预训练 checkpoint
 tokenizer_config/  # vocab 和 merge rules
 ```
