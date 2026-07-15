@@ -7,7 +7,7 @@ from tokenizer import Tokenizer
 
 from models import create_pretrain_model
 from losses import pretrain_loss
-from metrics import pretrain_accuray
+from metrics import pretrain_accuracy
 import torch
 from torch.utils.data import DataLoader
 
@@ -100,8 +100,8 @@ if __name__ == "__main__":
         
     epochs = 10
     for epoch in range(epochs):
-        train(epoch,train_dataloader,model,optimizer,pretrain_loss,pretrain_accuray)
-        test(epoch,test_dataloader,model,pretrain_loss,pretrain_accuray)
+        train(epoch,train_dataloader,model,optimizer,pretrain_loss,pretrain_accuracy)
+        test(epoch,test_dataloader,model,pretrain_loss,pretrain_accuracy)
         
             
         
