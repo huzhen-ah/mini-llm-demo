@@ -17,6 +17,9 @@ __pycache__/
 # Model checkpoints and exported weights
 *.pt
 *.pth
+!pytorch-mini-llm/models/*.pt
+!pytorch-mini-llm/lora_sft_weights/*.pt
+!pytorch-mini-llm/lora_dpo_weights/*.pt
 
 # Logs and temporary outputs
 logs/
