@@ -110,7 +110,7 @@ lora_sft_weights/*
 lora_dpo_weights/*
 ```
 
-是否提交这些产物由仓库策略决定；当前 `.gitignore` 默认忽略一般的 `*.pt` checkpoint，但明确保留 `pytorch-mini-llm` 三个权重目录中的示例 `.pt` 文件，也不会自动忽略 Keras 的 `*.pkl` 权重映射。
+Keras 示例使用的 `.pkl` 权重映射不会被当前 `.gitignore` 自动排除；是否提交新的训练产物，请按仓库需要决定。
 
 ## 5. 注意事项
 
