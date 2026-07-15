@@ -45,21 +45,22 @@ DPO 学的是：
 ```text
 pretrain base
   -> LoRA-SFT
-  -> merge SFT LoRA into base
+  -> lora_sft.py 自动 merge SFT LoRA into base
   -> load SFT merged base
   -> precompute ref logp
   -> LoRA-DPO
   -> save DPO LoRA
+  -> lora_dpo.py 自动 merge 并保存 DPO merged base
 ```
 
 对应入口：
 
 ```text
-merge_lora_checkpoint.py
+lora_sft.py
 lora_dpo.py
 ```
 
-其中 `merge_lora_checkpoint.py` 用于把 SFT LoRA 合并进 base 权重：
+其中 `lora_sft.py` 训练结束后会把 SFT LoRA 合并进 base 权重：
 
 ```text
 base weight + SFT LoRA delta -> SFT merged base
@@ -317,13 +318,19 @@ SFT merged base : 固定
 DPO LoRA        : 训练
 ```
 
-训练结束后，`DPO_Evaluate` 会保存 DPO LoRA 权重：
+训练结束时，`DPO_Evaluate` 会保存 DPO LoRA 增量权重：
 
 ```text
 lora_dpo_weights/{epoch}_lora_weights.pkl
 ```
 
-如果后续需要部署，也可以复用 `merge_lora_checkpoint.py` 把 DPO LoRA 合并进 SFT merged base。但本项目当前默认保留 DPO LoRA checkpoint。
+随后 `lora_dpo.py` 会自动调用 `merge_lora_weights()`，把 DPO LoRA 合并进 SFT merged base，并保存：
+
+```text
+lora_dpo_weights/0_k2v_lora_merged_weights.pkl
+```
+
+因此当前流程会同时保留 DPO LoRA 增量权重和可直接推理的 merged 权重。
 
 ## 12. 关于动态 padding
 
@@ -343,7 +350,7 @@ lora_dpo_weights/{epoch}_lora_weights.pkl
 1. 固定 pad 到 context_size
 2. 使用 tf.data.Dataset.from_generator 并显式声明 output_signature
 3. 使用自定义训练循环
-4. 在 PyTorch 版本中自然支持 batch 间动态长度
+4. 使用项目现有的 PyTorch 对照版本，通过 `collate_fn` 支持 batch 间动态长度
 ```
 
 本项目保留动态 padding，因为它更直接地表达了数据对齐逻辑。

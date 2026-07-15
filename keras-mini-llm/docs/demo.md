@@ -14,7 +14,7 @@ BBPE tokenizer
 
 ## 1. 本地文件准备
 
-仓库已经提供用于跑通流程的小型历史语料、SFT/DPO 示例数据和 tokenizer 配置。运行 `demo.py` 前，请确认以下目录存在：
+仓库已经提供武侠小说预训练文本、配套 SFT/DPO 数据和 tokenizer 配置。运行 `demo.py` 前，请确认以下目录存在：
 
 ```text
 data/
@@ -27,8 +27,8 @@ tokenizer_config/
 
 ```text
 data/      : 预训练纯文本语料
-SFT_data/  : LoRA-SFT jsonl 数据
-DPO_data/  : LoRA-DPO chosen/rejected jsonl 数据
+SFT_data/  : LoRA-SFT messages JSONL 数据（sft_data.jsonl）
+DPO_data/  : LoRA-DPO prompt/chosen/rejected JSONL 数据（dpo_data.jsonl）
 tokenizer_config/ : tokenizer vocab 与 merge rules
 ```
 
@@ -110,11 +110,11 @@ lora_sft_weights/*
 lora_dpo_weights/*
 ```
 
-这些文件默认被 `.gitignore` 排除，不随仓库提交。
+是否提交这些产物由仓库策略决定；当前 `.gitignore` 会忽略 PyTorch 的 `*.pt` checkpoint，但不会自动忽略 Keras 的 `*.pkl` 权重映射。
 
 ## 5. 注意事项
 
 - `demo.py` 默认使用很小的模型配置，主要用于验证流程，不代表模型效果。
 - 如果本地已经存在某阶段的输出文件，脚本会跳过该阶段。
-- LoRA-SFT 和 LoRA-DPO 都会先训练 LoRA 参数，再按需 merge 成新的 base 权重。
+- LoRA-SFT 和 LoRA-DPO 都会先训练 LoRA 参数，再自动 merge 并保存新的 base 权重。
 - 推理阶段加载的是 DPO merged base，因此不需要再额外加载 LoRA 权重。

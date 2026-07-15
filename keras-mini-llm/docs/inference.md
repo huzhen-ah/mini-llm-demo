@@ -93,6 +93,7 @@ num_head
 embedding_size
 use_lora
 weight_map_path
+lora_weights_path（可选）
 ```
 
 并从 tokenizer 中读取：
@@ -141,11 +142,14 @@ kcache : (batch, layer, max_len, head, head_dim)
 vcache : (batch, layer, max_len, head, head_dim)
 ```
 
-两个模型加载的是同一份训练权重映射：
+两个模型加载的是同一份训练权重映射；当 `use_lora=True` 且提供 `lora_weights_path` 时，还会在 base 权重之上加载 LoRA 增量：
 
 ```python
 apply_train_weights(model, weight_map_path)
+apply_lora_weights(model, lora_weights_path)
 ```
+
+当前 `interface.py` 默认设置 `use_lora=False`，直接加载 `lora_dpo_weights/0_k2v_lora_merged_weights.pkl`，因此无需再提供 LoRA 增量文件。
 
 ## 4. Prompt 编码与过滤
 
@@ -606,4 +610,3 @@ encode prompts
 -> prune finished samples
 -> return token ids
 ```
-
