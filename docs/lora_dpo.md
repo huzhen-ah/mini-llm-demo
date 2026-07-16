@@ -1,12 +1,14 @@
 # LoRA-DPO 原理与实现
 
-本文记录本项目中 LoRA-DPO 的设计思路和实现细节，对应代码主要在：
+本文记录项目中 LoRA-DPO 的设计思路和实现细节。Keras / TensorFlow 与 PyTorch 使用相同的 preference 数据定义、reference log-probability 预计算和 DPO 目标；batch 构造、训练循环与 checkpoint 格式按框架分别实现。
 
-- `lora_dpo.py`
-- `train_utils.py`
-- `losses.py`
-- `lora_utils.py`
-- `merge_lora_checkpoint.py`
+| 模块 | Keras / TensorFlow | PyTorch |
+| --- | --- | --- |
+| 训练入口 | `keras-mini-llm/lora_dpo.py` | `pytorch-mini-llm/lora_dpo.py` |
+| 数据与 ref logp | `keras-mini-llm/train_utils.py` | `pytorch-mini-llm/train_utils.py` |
+| DPO loss | `keras-mini-llm/losses.py` | `pytorch-mini-llm/losses.py` |
+| LoRA 管理 | `keras-mini-llm/lora_utils.py` | `pytorch-mini-llm/lora_utils.py` |
+| 评估与保存 | `keras-mini-llm/callbacks.py` | `pytorch-mini-llm/callbacks.py` |
 
 本文只讨论本项目里的基础 DPO：在已经完成 SFT 的模型上继续训练 LoRA，使模型更偏向 chosen answer，远离 rejected answer。
 
@@ -156,14 +158,14 @@ prompt_rejected_mask = [0] * (len(prompt_ids) - 1) + [1] * len(rejected_ids) + [
 
 ## 6. ref logp 预计算
 
-`pre_infer_dpo_data()` 会临时把 chosen/rejected 拼到同一个 batch 中：
+两套实现的 `pre_infer_dpo_data()` 都会临时把 chosen/rejected 拼到同一个 batch 中：
 
 ```text
 batch_inputs : chosen + rejected
 batch_outputs: chosen_label + rejected_label
 ```
 
-模型输出 logits 后，先做 softmax，再取目标 token 对应概率：
+模型输出 logits 后，先做 log-softmax，再取目标 token 对应的 log probability。两套实现都使用 NumPy 完成这一步：
 
 ```python
 batch_logp = np.log(softmax(batch_preds))
@@ -180,7 +182,7 @@ batch_logp = np.take_along_axis(batch_logp, batch_outputs[..., None], axis=-1)[:
 
 ## 7. DPO 训练 batch
 
-`data_generator_dpo()` 每次取一批 preference pairs，然后拆成两批序列：
+构造 DPO batch 时，每批 preference pairs 会拆成两批序列：
 
 ```text
 chosen batch
@@ -211,6 +213,8 @@ y_true.shape = (batch * 2, m, 3)
 y_pred.shape = (batch * 2, m, vocab_size)
 ```
 
+Keras 由 `data_generator_dpo()` 直接生成这些张量；PyTorch 由 `DPODataset` 返回单条 pair，再由 `dpo_collate_fn()` 在 batch 内动态 padding 并完成相同的拼接。
+
 ## 8. 为什么 batch 要乘 2
 
 因为一条 DPO 样本天然包含两条回答：
@@ -239,7 +243,7 @@ ref_chosen_logp = y_true[:batch, :, 1]
 ref_chosen_mask = y_true[:batch, :, 2]
 ```
 
-policy model 的 logp 来自当前 `y_pred`：
+policy model 的 logp 来自当前 `y_pred`。以下是 Keras 写法：
 
 ```python
 chosen_logp = K.take_along_axis(
@@ -248,6 +252,8 @@ chosen_logp = K.take_along_axis(
     axis=-1
 )[:, :, 0]
 ```
+
+PyTorch 使用 `torch.log_softmax()` 和 `torch.take_along_dim()` 完成相同的 gather。
 
 然后用 mask 只保留 answer/eos 部分：
 
@@ -318,23 +324,41 @@ SFT merged base : 固定
 DPO LoRA        : 训练
 ```
 
-训练结束时，`DPO_Evaluate` 会保存 DPO LoRA 增量权重：
+每个 epoch 结束时，评估器会执行样例生成并保存 DPO LoRA 增量权重：
 
 ```text
-lora_dpo_weights/{epoch}_lora_weights.pkl
+Keras  : lora_dpo_weights/{epoch}_lora_weights.pkl
+PyTorch: lora_dpo_weights/{epoch}_lora_weights.pt
 ```
 
 随后 `lora_dpo.py` 会自动调用 `merge_lora_weights()`，把 DPO LoRA 合并进 SFT merged base，并保存：
 
 ```text
-lora_dpo_weights/0_k2v_lora_merged_weights.pkl
+Keras  : lora_dpo_weights/0_k2v_lora_merged_weights.pkl
+PyTorch: lora_dpo_weights/{epoch}_k2v_lora_merged_weights.pt
 ```
 
 因此当前流程会同时保留 DPO LoRA 增量权重和可直接推理的 merged 权重。
 
-## 12. 关于动态 padding
+## 12. Keras 与 PyTorch 的训练流程差异
 
-`data_generator_dpo()` 当前使用 batch 内动态 padding：
+两套实现都先创建 `use_lora=True` 的模型、加载 SFT merged base、冻结 base 参数，并在 DPO 更新前用该状态预计算 reference logp。此时 LoRA B 矩阵仍为零，所以 reference 输出等于加载的 SFT merged base。
+
+Keras 的训练流程是：
+
+```text
+data_generator_dpo
+  -> model.compile(dpo_loss())
+  -> model.fit(..., callbacks=[DPO_Evaluate(...)])
+```
+
+PyTorch 使用 `DPODataset`、`dpo_collate_fn()` 和 `DataLoader`，并显式执行 forward、loss、`backward()` 与 optimizer step；测试阶段使用 `model.eval()` 和 `torch.no_grad()`，随后显式调用 `DPOEvaluate.on_epoch_end()`。
+
+checkpoint 的逻辑角色相同，但 Keras 使用 pickle `.pkl`，PyTorch 使用 `torch.save()` 的 `.pt`，两者不能直接跨框架加载。
+
+## 13. 关于动态 padding
+
+两套实现都使用 batch 内动态 padding：
 
 ```text
 每个 batch pad 到当前 batch 的最大长度。
@@ -342,7 +366,7 @@ lora_dpo_weights/0_k2v_lora_merged_weights.pkl
 
 这样更省计算，也更符合手写训练逻辑。
 
-需要注意的是，部分 Keras 版本在 `model.fit(generator)` 时会根据前几个 batch 推断固定 shape。如果不同 batch 的 time 维不同，可能触发 shape 推断错误。
+Keras 通过 `data_generator_dpo()` 把动态长度 batch 交给 `model.fit()`；PyTorch 通过 `dpo_collate_fn()` 交给 `DataLoader`。需要注意的是，部分 Keras 版本在 `model.fit(generator)` 时会根据前几个 batch 推断固定 shape。如果不同 batch 的 time 维不同，可能触发 shape 推断错误。
 
 这属于 Keras `fit(generator)` 的接口限制，不是 DPO 数据逻辑本身的问题。实际处理时可以选择：
 
@@ -350,12 +374,12 @@ lora_dpo_weights/0_k2v_lora_merged_weights.pkl
 1. 固定 pad 到 context_size
 2. 使用 tf.data.Dataset.from_generator 并显式声明 output_signature
 3. 使用自定义训练循环
-4. 使用项目现有的 PyTorch 对照版本，通过 `collate_fn` 支持 batch 间动态长度
+4. 使用 PyTorch 的 `collate_fn` 动态 padding 实现
 ```
 
 本项目保留动态 padding，因为它更直接地表达了数据对齐逻辑。
 
-## 13. 小结
+## 14. 小结
 
 本项目的 DPO 实现核心是：
 

@@ -28,6 +28,20 @@
 - Prefill / Decode 模型拆分和 KVCache 原地更新
 - 不同 prompt 长度的 batch 推理与完成样本动态裁剪
 
+## 文档
+
+Keras 与 PyTorch 共用的实现文档统一位于仓库根目录 `docs/`：
+
+- [Mini LLM 模型架构](../docs/model_architecture.md)
+- [Multi-Head Self-Attention 原理与实现](../docs/attention.md)
+- [BBPE 原理与实现](../docs/bbpe.md)
+- [RoPE 原理与实现](../docs/rope.md)
+- [KVCache 推理机制](../docs/kvcache.md)
+- [LoRA-SFT 原理与实现](../docs/lora_sft.md)
+- [LoRA-DPO 原理与实现](../docs/lora_dpo.md)
+- [端到端 demo](../docs/demo.md)
+- [推理主流程](../docs/inference.md)
+
 ## 环境要求
 
 建议使用 Python 3.10 或更高版本。代码依次选择 NVIDIA CUDA、Apple MPS 和 CPU。

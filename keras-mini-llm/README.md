@@ -111,7 +111,7 @@ python interface.py
 python demo.py
 ```
 
-`demo.py` 依赖本地数据、tokenizer 配置和模型权重目录。仓库当前提供武侠小说预训练语料与配套 SFT / DPO 数据，权重文件可按本地训练结果生成或替换。详细说明见：[端到端 demo](docs/demo.md)。
+`demo.py` 依赖本地数据、tokenizer 配置和模型权重目录。仓库当前提供武侠小说预训练语料与配套 SFT / DPO 数据，权重文件可按本地训练结果生成或替换。详细说明见：[端到端 demo](../docs/demo.md)。
 
 > `demo.py` 默认每个训练阶段只运行 1 个 epoch，主要用于验证代码链路是否畅通，不代表模型已经充分训练。完整训练可分别调整 `pretrain.py`、`lora_sft.py` 和 `lora_dpo.py` 中的 epoch、batch size 与模型配置。
 
@@ -146,26 +146,20 @@ python demo.py
 ├── SFT_data/                   # SFT jsonl 示例数据
 ├── DPO_data/                   # DPO chosen/rejected jsonl 示例数据
 ├── tokenizer_config/           # tokenizer vocab / merge rules
-├── docs/
-│   ├── bbpe.md                 # BBPE 原理与实现
-│   ├── rope.md                 # 绝对位置编码与 RoPE
-│   ├── kvcache.md              # KVCache 推理机制
-│   ├── lora_sft.md             # LoRA-SFT 原理与实现
-│   ├── lora_dpo.md             # LoRA-DPO 原理与实现
-│   ├── demo.md                 # 端到端 demo
-│   └── inference.md            # 推理主流程
 └── experiments/                # 实验脚本与调试脚本
 ```
 
 ## 文档
 
-- [BBPE 原理与实现](docs/bbpe.md)
-- [绝对位置编码与 RoPE](docs/rope.md)
-- [KVCache 推理机制](docs/kvcache.md)
-- [LoRA-SFT 原理与实现](docs/lora_sft.md)
-- [LoRA-DPO 原理与实现](docs/lora_dpo.md)
-- [端到端 demo](docs/demo.md)
-- [推理主流程](docs/inference.md)
+Keras 与 PyTorch 共用的实现文档统一位于仓库根目录 `docs/`：
+
+- [BBPE 原理与实现](../docs/bbpe.md)
+- [绝对位置编码与 RoPE](../docs/rope.md)
+- [KVCache 推理机制](../docs/kvcache.md)
+- [LoRA-SFT 原理与实现](../docs/lora_sft.md)
+- [LoRA-DPO 原理与实现](../docs/lora_dpo.md)
+- [端到端 demo](../docs/demo.md)
+- [推理主流程](../docs/inference.md)
 
 ## 核心流程
 
@@ -188,7 +182,7 @@ python bbpe_trainer.py
 
 当前 tokenizer 是 byte-level BPE，因此基础词表从 0-255 的 byte 开始，再通过 merge rules 扩展词表。
 
-详细说明见：[BBPE 原理与实现](docs/bbpe.md)。
+详细说明见：[BBPE 原理与实现](../docs/bbpe.md)。
 
 ### 2. 预训练语言模型
 
@@ -272,7 +266,7 @@ python merge_lora_checkpoint.py
 python lora_dpo.py
 ```
 
-LoRA-DPO 的实现细节见：[LoRA-DPO 原理与实现](docs/lora_dpo.md)。
+LoRA-DPO 的实现细节见：[LoRA-DPO 原理与实现](../docs/lora_dpo.md)。
 
 当前仓库提供一份武侠领域 DPO 数据：
 
@@ -420,7 +414,7 @@ decode attention 内部会转成：
 
 decode 阶段不再需要 causal mask，因为每次只输入当前 token；只需要根据 `cur_valid_len` 构造 valid key mask，屏蔽 cache 中尚未写入的位置。
 
-详细说明见：[KVCache 推理机制](docs/kvcache.md) 和 [推理主流程](docs/inference.md)。
+详细说明见：[KVCache 推理机制](../docs/kvcache.md) 和 [推理主流程](../docs/inference.md)。
 
 ## 数据、配置与模型文件
 

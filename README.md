@@ -39,3 +39,13 @@ BBPE tokenizer
 ## 通用实现文档
 
 - [Mini LLM 模型架构](docs/model_architecture.md)
+- [Multi-Head Self-Attention 原理与实现](docs/attention.md)
+- [BBPE 原理与实现](docs/bbpe.md)
+- [RoPE 原理与实现](docs/rope.md)
+- [KVCache 原理与实现](docs/kvcache.md)
+- [LoRA-SFT 原理与实现](docs/lora_sft.md)
+- [LoRA-DPO 原理与实现](docs/lora_dpo.md)
+- [推理流程说明](docs/inference.md)
+- [端到端 Demo](docs/demo.md)
+
+全部根目录实现文档均已按 Keras / PyTorch 当前代码校订；共用原理合并说明，框架差异在对应章节中分别记录。

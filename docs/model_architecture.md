@@ -197,7 +197,7 @@ Q_rot = RoPE(Q)
 K_rot = RoPE(K)
 ```
 
-V 不做旋转。RoPE 让 attention score 能反映 token 之间的相对位置。其数学推导和代码细节见 `keras-mini-llm/docs/rope.md`；该原理同样适用于 PyTorch 实现。
+V 不做旋转。RoPE 让 attention score 能反映 token 之间的相对位置。其数学推导和代码细节见 [RoPE 原理与实现](rope.md)；该原理同样适用于 PyTorch 实现。
 
 ### 8.3 Attention Score 与 Mask
 

@@ -43,19 +43,13 @@ class BBPETrainer:
         self.vocab = {i:[i] for i in range(256)}
         self.pattern = r"""'(?:s|t|re|ve|m|ll|d)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+[\s]*"""
         
-        
-    def cut_segment(self,segment):
-        ret = []
-        if len(segment) <= self.max_segment_size:
-            return [segment]
-        num = len(segment) // self.max_segment_size
-        for i in range(num):
-            if i != num - 1:
-                ret.append(segment[i*self.max_segment_size:(i+1)*self.max_segment_size])
-            else:
-                ret.append(segment[i*self.max_segment_size:])
-        return ret
     
+    def cut_segment(self, segment):
+        return [
+            segment[i:i + self.max_segment_size]
+            for i in range(0, len(segment), self.max_segment_size)
+        ]
+
     def load_segments(self):
         segment2freq = {}#片段:频数
         segment_list = []

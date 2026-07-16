@@ -1,11 +1,15 @@
 # 推理流程说明
 
-本文记录本项目从 prompt 到生成结果的完整推理链路，对应代码主要在：
+本文记录项目从 prompt 到生成结果的完整推理链路。Keras / TensorFlow 与 PyTorch 使用相同的外层生成状态机、tokenizer、Top-K Sampling 和停止条件；模型调用、tensor 类型、设备管理及 KVCache 维度顺序按框架分别实现。
 
-- `interface.py`
-- `inference_models.py`
-- `sample_utils.py`
-- `tokenizer.py`
+| 模块 | Keras / TensorFlow | PyTorch |
+| --- | --- | --- |
+| 推理控制 | `keras-mini-llm/interface.py` | `pytorch-mini-llm/interface.py` |
+| Prefill / Decode | `keras-mini-llm/inference_models.py` | `pytorch-mini-llm/inference_models.py` |
+| 采样 | `keras-mini-llm/sample_utils.py` | `pytorch-mini-llm/sample_utils.py` |
+| Tokenizer | `keras-mini-llm/tokenizer.py` | `pytorch-mini-llm/tokenizer.py` |
+
+两套 `sample_utils.py` 和 `tokenizer.py` 当前逻辑一致。KVCache 内部细节另见 [KVCache 原理与实现](kvcache.md)。
 
 本文只讨论本项目当前的基础推理流程：
 
@@ -41,8 +45,8 @@ Interface.predict(prompts)
    - 下一 token logits
    - 初始 kcache
    - 初始 vcache
-5. 对 prefill logits 做 top-k sampling，得到第一个生成 token
-6. 把 kcache / vcache padding 到固定 max_len
+5. 把 kcache / vcache padding 到固定 max_len
+6. 对 prefill logits 做 top-k sampling，得到第一个生成 token
 7. 进入 decode loop：
    - 每轮输入上一轮生成的 token
    - 更新 kcache / vcache
@@ -54,7 +58,7 @@ Interface.predict(prompts)
 
 ## 2. 初始化 Interface
 
-`Interface` 初始化时接收一个 tokenizer：
+Keras `Interface` 初始化时接收一个 tokenizer：
 
 ```python
 interface = Interface(Tokenizer())
@@ -68,6 +72,8 @@ self.vocab_size = len(self.tokenizer.vocab)
 self.max_len = 1000
 ```
 
+PyTorch `Interface` 还接收 `configs`，并保存 `num_block`、`num_head`、`embedding_dim`、权重路径和 `device`；Keras 则在初始化 Prefill/Decode 时分别传入 configs。
+
 其中：
 
 ```text
@@ -78,11 +84,18 @@ max_len : 本项目推理阶段允许的最大序列长度
 
 ## 3. 初始化 Prefill 和 Decode 模型
 
-推理前需要分别初始化：
+推理前需要分别初始化 Prefill 和 Decode。Keras 调用为：
 
 ```python
 interface.init_prefill_model(configs)
 interface.init_decode_model(configs)
+```
+
+PyTorch 在构造 `Interface(tokenizer, configs)` 时已保存配置，因此调用不再重复传参：
+
+```python
+interface.init_prefill_model()
+interface.init_decode_model()
 ```
 
 两个初始化函数都会从 `configs` 中读取：
@@ -90,7 +103,7 @@ interface.init_decode_model(configs)
 ```text
 num_block
 num_head
-embedding_size
+模型维度：Keras 为 embedding_size，PyTorch 为 embedding_dim
 use_lora
 weight_map_path
 lora_weights_path（可选）
@@ -110,12 +123,18 @@ special_ids = self.tokenizer.special_ids
 inputs: (batch, prompt_time)
 ```
 
-输出：
+Keras 输出 cache 为 batch-first：
 
 ```text
 logits : (batch, prompt_time, vocab_size)
 kcache : (batch, layer, prompt_time, head, head_dim)
 vcache : (batch, layer, prompt_time, head, head_dim)
+```
+
+PyTorch logits 形状相同，但 cache 为：
+
+```text
+kcache/vcache: (layer, batch, head, prompt_time, head_dim)
 ```
 
 ### 3.2 Decode_Model
@@ -126,20 +145,21 @@ vcache : (batch, layer, prompt_time, head, head_dim)
 inputs: (batch, 1)
 ```
 
-额外输入：
+额外输入的逻辑内容相同，但 cache 形状不同：
 
 ```text
 cur_valid_len : (batch,)
-kcache        : (batch, layer, max_len, head, head_dim)
-vcache        : (batch, layer, max_len, head, head_dim)
+kcache/vcache:
+  Keras   (batch, layer, max_len, head, head_dim)
+  PyTorch (layer, batch, head, max_len, head_dim)
 ```
 
-输出：
+Keras 内部模型显式输出 logits 和更新后的 cache。PyTorch 内部 `nn.Module` 只返回 logits，cache 由原地更新保留；两套外层 `predict()` 最终都返回：
 
 ```text
 logits : (batch, 1, vocab_size)
-kcache : (batch, layer, max_len, head, head_dim)
-vcache : (batch, layer, max_len, head, head_dim)
+更新后的 kcache
+更新后的 vcache
 ```
 
 两个模型加载的是同一份训练权重映射；当 `use_lora=True` 且提供 `lora_weights_path` 时，还会在 base 权重之上加载 LoRA 增量：
@@ -149,7 +169,7 @@ apply_train_weights(model, weight_map_path)
 apply_lora_weights(model, lora_weights_path)
 ```
 
-当前 `interface.py` 默认设置 `use_lora=False`，直接加载 `lora_dpo_weights/0_k2v_lora_merged_weights.pkl`，因此无需再提供 LoRA 增量文件。
+两个 `interface.py` 的示例配置都设置 `use_lora=False`，直接加载 DPO merged 权重：Keras 使用 `.pkl`，PyTorch 使用 `.pt`，因此无需再提供 LoRA 增量文件。
 
 ## 4. Prompt 编码与过滤
 
@@ -220,6 +240,8 @@ batch_text_ids = self.padding(batch_text_ids)
 max_len = max(len(x) for x in X)
 X = [x + [pad_id] * (max_len - len(x)) for x in X]
 ```
+
+Keras 返回 NumPy `int32` 数组；PyTorch 随后创建位于配置设备上的 `torch.long` tensor。
 
 输出：
 
@@ -303,9 +325,11 @@ preds[:, special_ids["<pad>"]] = -1e10
 <eos> 没有被禁止，因为需要允许模型生成结束符。
 ```
 
+Keras `model.predict()` 直接返回 NumPy 数据。PyTorch 的 Prefill/Decode 在 `torch.inference_mode()` 中运行，cache 保留在配置设备上，只有用于采样的 logits 会转到 CPU NumPy；因此共用的 `top_k_sampling()` 不需要区分框架。
+
 ## 7. 初始化固定长度 KVCache
 
-prefill 输出的 cache 形状是：
+Keras prefill 输出的 cache 形状是：
 
 ```text
 (batch, layer, prompt_time, head, head_dim)
@@ -331,6 +355,20 @@ kcache = np.pad(
 `vcache` 同理。
 
 这样后续 decode 可以在固定形状 cache 中按位置更新。
+
+PyTorch prefill cache 为：
+
+```text
+(layer, batch, head, prompt_time, head_dim)
+```
+
+并使用：
+
+```python
+kcache = F.pad(kcache, (0, 0, 0, self.max_len - kcache.size(3)))
+```
+
+把第 3 维补成 `max_len`，得到 `(layer, batch, head, max_len, head_dim)`。两套实现的逻辑容量相同，只有维度顺序和 padding API 不同。
 
 ## 8. 第一次采样
 
@@ -429,7 +467,7 @@ cur_valid_len - 1 = L
 
 ### 9.3 调用 Decode_Model
 
-调用：
+两套外层接口的调用形式一致：
 
 ```python
 preds, kcache, vcache = self.decode_model.predict(
@@ -502,7 +540,7 @@ new_valid_prompt_ids
 
 如果某些样本已经结束，就从后续 batch 中移除。
 
-由于对外 cache 是 batch-first：
+Keras cache 是 batch-first：
 
 ```text
 (batch, layer, max_len, head, head_dim)
@@ -515,6 +553,13 @@ kcache = kcache[np.array(valid_prompt_ids_indices)]
 vcache = vcache[np.array(valid_prompt_ids_indices)]
 ```
 
+PyTorch cache 的 batch 在第 1 维，并使用设备上的 index tensor：
+
+```python
+kcache = kcache[:, keep_indices]
+vcache = vcache[:, keep_indices]
+```
+
 如果所有样本都结束：
 
 ```python
@@ -523,7 +568,7 @@ return ret
 
 ## 11. Top-K Sampling
 
-采样函数在 `sample_utils.py`：
+两套完全相同的采样函数都位于各自的 `sample_utils.py`：
 
 ```python
 top_k_sampling(logits, k=70, temperature=1.0)
@@ -595,7 +640,7 @@ text = tokenizer.decode(ret[i]["prompt"] + ret[i]["generated"])
 - decode 当前 token 的 cache 写入位置是 `cur_valid_len - 1`。
 - 生成时禁止 `<bos>`、`<unk>`、`<pad>`，但允许 `<eos>`。
 - 生成 `<eos>` 或达到 `max_len` 后，样本停止生成。
-- batch 中提前结束的样本会被移除，cache 也按 batch 维同步裁剪。
+- batch 中提前结束的样本会被移除；Keras 沿 cache 第 0 维裁剪，PyTorch 沿第 1 维裁剪。
 
 整体链路可以浓缩为：
 
@@ -603,8 +648,8 @@ text = tokenizer.decode(ret[i]["prompt"] + ret[i]["generated"])
 encode prompts
 -> pad batch
 -> prefill once
--> sample first token
 -> pad cache to max_len
+-> sample first token
 -> decode one token at a time
 -> sample next token
 -> prune finished samples

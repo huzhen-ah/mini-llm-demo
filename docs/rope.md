@@ -1,9 +1,13 @@
 # RoPE 原理与实现
 
-本文记录本项目中 RoPE 的数学直觉和实现细节，对应代码主要在：
+本文记录项目中 RoPE 的数学直觉和实现细节。Keras / TensorFlow 与 PyTorch 两个版本采用相同的复数旋转方案、位置约定和张量布局，因此共用本文。
 
-- `rope.py`
-- `attention.py`
+对应代码位于：
+
+| 模块 | Keras / TensorFlow | PyTorch |
+| --- | --- | --- |
+| RoPE | `keras-mini-llm/rope.py` | `pytorch-mini-llm/rope.py` |
+| Attention 调用 | `keras-mini-llm/attention.py` | `pytorch-mini-llm/attention.py` |
 
 本文会先介绍传统绝对位置编码 APE，再介绍 RoPE，最后说明两者在 attention 中的主要区别，以及本项目 `rope_exp()` 的实现方式。
 
@@ -448,7 +452,7 @@ RoPE 则把相对位置结构直接放进 q/k 点积的整体比较方式里。
 
 ## 5. 本项目中的 RoPE 实现
 
-本项目的实现位于 `rope.py`：
+两套实现均在各自的 `rope.py` 中提供相同的函数接口：
 
 ```python
 def rope_exp(q, cur_valid_len=None, theta=10000):
@@ -471,7 +475,7 @@ head_dim : 每个 head 的维度
 
 ### 5.1 位置 position
 
-如果是 prefill / 训练阶段，`cur_valid_len is None`，此时 `time = t`，位置为：
+如果是 prefill / 训练阶段，`cur_valid_len is None`，此时 `time = t`。Keras 实现为：
 
 ```python
 position = K.arange(t, dtype="float32")[None, None, :, None]
@@ -489,7 +493,9 @@ position = K.arange(t, dtype="float32")[None, None, :, None]
 (batch, head, time, head_dim/2)
 ```
 
-如果是 decode 阶段，当前输入通常只有一个 token，此时传入 `cur_valid_len`：
+PyTorch 使用 `torch.arange(..., device=q.device)` 构造相同的位置张量。
+
+如果是 decode 阶段，当前输入通常只有一个 token，此时传入 `cur_valid_len`。Keras 实现为：
 
 ```python
 t = cur_valid_len - 1
@@ -501,6 +507,8 @@ position = K.cast(K.reshape(t, (-1, 1, 1, 1)), dtype="float32")
 ```text
 (batch, 1, 1, 1)
 ```
+
+PyTorch 对应使用 `reshape(...).to(dtype=torch.float32, device=q.device)`，形状和位置语义相同。
 
 这里使用 `cur_valid_len - 1` 的前提是：
 
@@ -518,7 +526,7 @@ cur_valid_len - 1
 
 ### 5.2 频率 theta
 
-代码中：
+以下是 Keras 写法：
 
 ```python
 index = K.arange(c // 2, dtype="float32")
@@ -540,6 +548,8 @@ angle_i = position * theta_i
 theta = 10000
 ```
 
+PyTorch 使用 `torch.arange(c // 2, ...)` 完成同一计算。
+
 这和经典 sinusoidal position encoding 使用的频率形式一致。
 
 ### 5.3 维度配对方式
@@ -558,7 +568,7 @@ theta = 10000
 (x_0, x_{c/2}), (x_1, x_{c/2+1}), ...
 ```
 
-本项目使用第二种方式：
+本项目的两个版本都使用第二种方式。Keras 写法是：
 
 ```python
 left, right = tf.split(q, 2, axis=-1)
@@ -578,9 +588,11 @@ right -> 复数虚部
 z = left + i * right
 ```
 
+PyTorch 对应使用 `torch.split()` 和 `torch.complex()`。
+
 ### 5.4 复数乘法实现旋转
 
-代码中：
+Keras 实现为：
 
 ```python
 rotate_q = complex_q * tf.exp(tf.complex(tf.zeros_like(m_theta), m_theta))
@@ -598,6 +610,8 @@ tf.exp(i * m_theta) = cos(m_theta) + i sin(m_theta)
 complex_q * exp(i * m_theta)
 ```
 
+PyTorch 对应使用 `torch.exp(torch.complex(...))`，复数乘法的数学含义不变。
+
 等价于对每一组二维向量做旋转：
 
 ```text
@@ -605,7 +619,7 @@ real' = real * cos(angle) - imag * sin(angle)
 imag' = real * sin(angle) + imag * cos(angle)
 ```
 
-最后取出实部和虚部：
+Keras 最后取出实部和虚部：
 
 ```python
 real = tf.math.real(rotate_q)
@@ -618,6 +632,8 @@ imag = tf.math.imag(rotate_q)
 return K.concatenate([real, imag], axis=-1)
 ```
 
+PyTorch 对应使用 `torch.real()`、`torch.imag()` 和 `torch.cat()`。
+
 因此本项目输出的维度排列仍然是：
 
 ```text
@@ -626,7 +642,21 @@ return K.concatenate([real, imag], axis=-1)
 
 不是相邻交错排列。
 
-### 5.5 使用注意点
+### 5.5 Keras 与 PyTorch 的代码对应关系
+
+| 操作 | Keras / TensorFlow | PyTorch |
+| --- | --- | --- |
+| 获取形状 | `K.shape(q)` | `q.shape` |
+| 创建位置索引 | `K.arange` | `torch.arange` |
+| 拆分最后一维 | `tf.split` | `torch.split` |
+| 构造复数 | `tf.complex` | `torch.complex` |
+| 复指数 | `tf.exp` | `torch.exp` |
+| 取实部/虚部 | `tf.math.real/imag` | `torch.real/imag` |
+| 拼接 | `K.concatenate` | `torch.cat` |
+
+PyTorch 显式把临时张量放到 `q.device`；Keras 由张量运算和后端处理设备。除此之外，两套 `rope_exp()` 的输入输出、频率公式与 decode 位置约定一致。
+
+### 5.6 使用注意点
 
 `rope_exp()` 默认要求：
 

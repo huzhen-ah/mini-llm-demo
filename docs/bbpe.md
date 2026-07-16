@@ -1,9 +1,15 @@
 # BBPE 原理与实现
 
-本文记录本项目中 Byte-level BPE tokenizer 的实现思路，对应代码主要在：
+本文记录项目中 Byte-level BPE tokenizer 的实现思路。Keras / TensorFlow 与 PyTorch 两个版本使用相同的 tokenizer 训练和编码代码，因此共用本文。
 
-- `bbpe_trainer.py`
-- `tokenizer.py`
+对应代码位于：
+
+| 模块 | Keras / TensorFlow | PyTorch |
+| --- | --- | --- |
+| BBPE 训练 | `keras-mini-llm/bbpe_trainer.py` | `pytorch-mini-llm/bbpe_trainer.py` |
+| 编码与解码 | `keras-mini-llm/tokenizer.py` | `pytorch-mini-llm/tokenizer.py` |
+
+当前两套实现的上述文件逻辑一致。它们各自在子项目的 `tokenizer_config/` 中读取或保存词表与合并规则，以便两个子项目可以独立运行。
 
 项目里的 tokenizer 分成两部分：
 
