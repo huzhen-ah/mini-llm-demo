@@ -21,7 +21,7 @@ BBPE tokenizer
 | [Keras / TensorFlow](keras-mini-llm/) | 已完成预训练、LoRA-SFT、LoRA-DPO、Prefill / Decode、KVCache 推理和端到端 demo |
 | [PyTorch](pytorch-mini-llm/) | 已完成预训练、LoRA-SFT、LoRA-DPO、Prefill / Decode、KVCache 推理和端到端 demo |
 
-当前 Keras / TensorFlow 与 PyTorch 两个版本的核心训练和推理链路均已跑通。下一阶段将补充 PyTorch 版本的运行说明与实现文档。
+当前 Keras / TensorFlow 与 PyTorch 两个版本的核心训练和推理链路均已跑通。两套版本的运行说明已分别整理在各自 README 中，共用原理与实现差异统一记录在根目录 `docs/`。
 
 ## 目录结构
 
@@ -29,12 +29,13 @@ BBPE tokenizer
 .
 ├── keras-mini-llm/       # Keras / TensorFlow 完整版本
 ├── pytorch-mini-llm/     # PyTorch 对照实现
+├── docs/                 # 两套框架共用的原理与实现文档
 └── README.md
 ```
 
 两个版本各自保持完整、可独立运行的工程结构。少量重复代码用于保留清晰的一一对应关系，便于逐文件比较两个框架的实现差异。
 
-详细的运行方式、文件说明和后续计划见各版本目录中的 README。
+详细的运行方式和文件说明见各版本目录中的 README；通用实现文档见下方索引。
 
 ## 通用实现文档
 
